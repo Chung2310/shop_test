@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Cập nhật sách</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-5">
+
+<h2 class="mb-4">✏️ Cập nhật thông tin sách</h2>
+
+<form th:action="@{'/books/update/' + ${book.id}}" th:object="${book}" method="post" class="needs-validation" novalidate>
+    <div class="mb-3">
+        <label for="title" class="form-label">Tiêu đề</label>
+        <input type="text" th:field="*{title}" id="title" class="form-control" required>
+        <div class="invalid-feedback">Vui lòng nhập tiêu đề sách.</div>
+    </div>
+
+    <div class="mb-3">
+        <label for="author" class="form-label">Tác giả</label>
+        <input type="text" th:field="*{author}" id="author" class="form-control" required>
+        <div class="invalid-feedback">Vui lòng nhập tên tác giả.</div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">💾 Cập nhật</button>
+    <a th:href="@{/books}" class="btn btn-secondary">↩ Quay lại</a>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+    (() => {
+        'use strict'
+        const forms = document.querySelectorAll('.needs-validation')
+        Array.from(forms).forEach(form => {
+            form.addEventListener('submit', event => {
+                if (!form.checkValidity()) {
+                    event.preventDefault()
+                    event.stopPropagation()
+                }
+                form.classList.add('was-validated')
+            }, false)
+        })
+    })()
+</script>
+</body>
+</html>
