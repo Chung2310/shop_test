@@ -1,7 +1,7 @@
-package com.example.shop.dto;
+package com.example.shop.dto.mapper;
 
+import com.example.shop.dto.BookDTO;
 import com.example.shop.model.Book;
-import lombok.Data;
 import org.mapstruct.Mapper;
 
 import java.util.List;
