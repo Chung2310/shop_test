@@ -1,6 +1,7 @@
 package com.example.shop.config;
 
 import com.example.shop.service.UserService;
+import com.example.shop.service.UserServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -20,16 +21,14 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     @Autowired
-    private UserService userService;
+    private UserServiceImpl userService;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/auth/**").permitAll()
-                        .requestMatchers("/api/**").permitAll()
-                        .anyRequest().authenticated()
+                        .anyRequest().permitAll()
                 )
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
@@ -41,11 +40,12 @@ public class SecurityConfig {
     @Bean
     public AuthenticationManager authManager(HttpSecurity http) throws Exception {
         return http.getSharedObject(AuthenticationManagerBuilder.class)
-                .userDetailsService(userService)
+                .userDetailsService(userService) // dùng đúng UserService hiện tại
                 .passwordEncoder(passwordEncoder())
                 .and()
                 .build();
     }
+
 
     @Bean
     public PasswordEncoder passwordEncoder() {

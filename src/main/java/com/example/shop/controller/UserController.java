@@ -1,9 +1,11 @@
 package com.example.shop.controller;
 
 import com.example.shop.dto.LoginRequest;
+import com.example.shop.dto.UserDTO;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.User;
 import com.example.shop.service.UserService;
+import com.example.shop.service.UserServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -27,7 +29,7 @@ public class UserController {
     @Autowired
     private AuthenticationManager authenticationManager;
     @Autowired
-    private UserService userService;
+    private UserServiceImpl userServiceImpl;
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
@@ -46,7 +48,7 @@ public class UserController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiReponse<User>> createUser(@RequestBody User user) {
-        return userService.createUser(user);
+    public ResponseEntity<ApiReponse<UserDTO>> createUser(@RequestBody User user) {
+        return userServiceImpl.createUser(user);
     }
 }

@@ -4,6 +4,7 @@ import com.example.shop.dto.BookDTO;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.Book;
 import com.example.shop.service.BookService;
+import com.example.shop.service.BookServiceImpl;
 import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import lombok.RequiredArgsConstructor;
@@ -16,35 +17,35 @@ import java.util.List;
 @RequestMapping("api/book")
 @RequiredArgsConstructor
 public class BookController {
-    private final BookService  bookService;
+    private final BookServiceImpl bookServiceImpl;
 
     @GetMapping
     public ResponseEntity<ApiReponse<List<BookDTO>>> getAllBooks(){
-        return bookService.getAllBooks();
+        return bookServiceImpl.getAllBooks();
     }
 
     @GetMapping("/title")
     public ResponseEntity<ApiReponse<List<BookDTO>>> getBookByTitle(@RequestParam String title){
-        return bookService.getBookByTitle(title);
+        return bookServiceImpl.getBookByTitle(title);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<ApiReponse<BookDTO>> getBookById(@PathVariable Long id){
-        return bookService.getBookById(id);
+        return bookServiceImpl.getBookById(id);
     }
 
     @PostMapping
     public ResponseEntity<ApiReponse<BookDTO>> createBook(@Valid @RequestBody BookDTO book){
-        return bookService.createBook(book);
+        return bookServiceImpl.createBook(book);
     }
 
     @PutMapping
     public ResponseEntity<ApiReponse<Book>> updateBook( @RequestBody Book book){
-        return bookService.updateBook(book);
+        return bookServiceImpl.updateBook(book);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<ApiReponse<Book>> deleteBook(@PathVariable Long id){
-        return bookService.deleteBook(id);
+        return bookServiceImpl.deleteBook(id);
     }
 }
