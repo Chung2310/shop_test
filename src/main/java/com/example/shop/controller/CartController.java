@@ -1,7 +1,7 @@
 package com.example.shop.controller;
 
 import com.example.shop.dto.CartItemDTO;
-import com.example.shop.dto.CartItemRequest;
+import com.example.shop.dto.request.CartItemRequest;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.CartItem;
 import com.example.shop.service.CartItemServiceImpl;

@@ -1,7 +1,7 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.LoginRequest;
 import com.example.shop.dto.UserDTO;
+import com.example.shop.dto.request.LoginRequest;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.User;
 import com.example.shop.service.UserService;

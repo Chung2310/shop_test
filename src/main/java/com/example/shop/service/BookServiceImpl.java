@@ -1,7 +1,8 @@
 package com.example.shop.service;
 
 import com.example.shop.dto.BookDTO;
-import com.example.shop.dto.BookMapper;
+
+import com.example.shop.dto.mapper.BookMapper;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.Book;
 import com.example.shop.repository.BookRepository;

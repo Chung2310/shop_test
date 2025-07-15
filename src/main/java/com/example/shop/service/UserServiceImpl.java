@@ -1,10 +1,11 @@
 package com.example.shop.service;
 
 import com.example.shop.dto.UserDTO;
-import com.example.shop.dto.UserMapper;
+import com.example.shop.dto.mapper.UserMapper;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.User;
 import com.example.shop.repository.UserRepository;
+import com.example.shop.security.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,9 @@ import java.util.ArrayList;
 public class UserServiceImpl implements UserDetailsService,UserService {
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private JwtUtil jwtUtil;
 
     @Autowired
     private UserMapper userMapper;

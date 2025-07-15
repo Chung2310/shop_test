@@ -1,7 +1,8 @@
 package com.example.shop.service;
 
 import com.example.shop.dto.CartItemDTO;
-import com.example.shop.dto.CartItemRequest;
+
+import com.example.shop.dto.request.CartItemRequest;
 import com.example.shop.model.ApiReponse;
 import com.example.shop.model.CartItem;
 import org.springframework.http.ResponseEntity;
