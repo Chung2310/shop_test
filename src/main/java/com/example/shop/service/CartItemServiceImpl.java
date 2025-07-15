@@ -3,7 +3,7 @@ package com.example.shop.service;
 import com.example.shop.dto.CartItemDTO;
 import com.example.shop.dto.mapper.CartItemMapper;
 import com.example.shop.dto.request.CartItemRequest;
-import com.example.shop.model.ApiReponse;
+import com.example.shop.model.ApiResponse;
 import com.example.shop.model.CartItem;
 import com.example.shop.repository.BookRepository;
 import com.example.shop.repository.CartItemRepository;
@@ -11,6 +11,7 @@ import com.example.shop.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,28 +22,31 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class CartItemServiceImpl implements CartItemService {
-
-    private final UserRepository userRepository;
-    private final BookRepository bookRepository;
-    private final CartItemMapper cartItemMapper;
-    private final CartItemRepository cartItemRepository;
+    @Autowired
+    private  UserRepository userRepository;
+    @Autowired
+    private  BookRepository bookRepository;
+    @Autowired
+    private  CartItemMapper cartItemMapper;
+    @Autowired
+    private  CartItemRepository cartItemRepository;
 
     private static final Logger logger = LoggerFactory.getLogger(CartItemServiceImpl.class);
 
     @Override
-    public ResponseEntity<ApiReponse<List<CartItemDTO>>> getAllCartItems(Long userId) {
+    public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartItems(Long userId) {
         logger.info("[getAllCartItems] Lấy giỏ hàng cho userId: {}", userId);
 
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         logger.debug("[getAllCartItems] Số lượng sản phẩm trong giỏ hàng: {}", cartItems.size());
 
         return ResponseEntity.ok(
-                new ApiReponse<>(HttpStatus.OK.value(), "Lấy dữ liệu giỏ hàng thành công!", cartItemMapper.toDTOList(cartItems))
+                new ApiResponse<>(HttpStatus.OK.value(), "Lấy dữ liệu giỏ hàng thành công!", cartItemMapper.toDTOList(cartItems))
         );
     }
 
     @Override
-    public ResponseEntity<ApiReponse<CartItemDTO>> addItemToCart(CartItemRequest cartItemRequest) {
+    public ResponseEntity<ApiResponse<CartItemDTO>> addItemToCart(CartItemRequest cartItemRequest) {
         logger.info("[addItemToCart] Thêm sản phẩm vào giỏ: userId={}, bookId={}, quantity={}",
                 cartItemRequest.getUserId(), cartItemRequest.getBookId(), cartItemRequest.getQuantity());
 
@@ -77,11 +81,11 @@ public class CartItemServiceImpl implements CartItemService {
 
         cartItemRepository.save(cartItem);
         logger.info("[addItemToCart] ✅ Đã lưu CartItem thành công.");
-        return ResponseEntity.ok(new ApiReponse<>(HttpStatus.OK.value(), "Thêm vào giỏ hàng thành công!", cartItemMapper.toDTO(cartItem)));
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Thêm vào giỏ hàng thành công!", cartItemMapper.toDTO(cartItem)));
     }
 
     @Override
-    public ResponseEntity<ApiReponse<CartItemDTO>> updateItemToCart(CartItemRequest cartItemRequest) {
+    public ResponseEntity<ApiResponse<CartItemDTO>> updateItemToCart(CartItemRequest cartItemRequest) {
         logger.info("[updateItemToCart] Cập nhật số lượng: userId={}, bookId={}, quantity={}",
                 cartItemRequest.getUserId(), cartItemRequest.getBookId(), cartItemRequest.getQuantity());
 
@@ -96,11 +100,11 @@ public class CartItemServiceImpl implements CartItemService {
         cartItemRepository.save(item);
 
         logger.info("[updateItemToCart] ✅ Cập nhật số lượng thành công.");
-        return ResponseEntity.ok(new ApiReponse<>(HttpStatus.OK.value(), "Cập nhật số lượng thành công!", cartItemMapper.toDTO(item)));
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Cập nhật số lượng thành công!", cartItemMapper.toDTO(item)));
     }
 
     @Override
-    public ResponseEntity<ApiReponse<String>> deleteItem(Long userId, Long bookId) {
+    public ResponseEntity<ApiResponse<String>> deleteItem(Long userId, Long bookId) {
         logger.info("[deleteItem] Xoá sản phẩm: userId={}, bookId={}", userId, bookId);
 
         CartItem item = cartItemRepository.findByUserIdAndBookId(userId, bookId)
@@ -111,16 +115,16 @@ public class CartItemServiceImpl implements CartItemService {
 
         cartItemRepository.delete(item);
         logger.info("[deleteItem] ✅ Xoá sản phẩm thành công.");
-        return ResponseEntity.ok(new ApiReponse<>(HttpStatus.OK.value(), "Xoá item khỏi giỏ hàng thành công!", null));
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Xoá item khỏi giỏ hàng thành công!", null));
     }
 
     @Override
-    public ResponseEntity<ApiReponse<String>> deleteAllCartItems(Long userId) {
+    public ResponseEntity<ApiResponse<String>> deleteAllCartItems(Long userId) {
         logger.info("[deleteAllCartItems] Xoá toàn bộ giỏ hàng cho userId: {}", userId);
 
         cartItemRepository.deleteByUserId(userId);
         logger.info("[deleteAllCartItems] ✅ Xoá toàn bộ sản phẩm thành công.");
 
-        return ResponseEntity.ok(new ApiReponse<>(HttpStatus.OK.value(), "Xoá toàn bộ giỏ hàng!", null));
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Xoá toàn bộ giỏ hàng!", null));
     }
 }

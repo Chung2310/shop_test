@@ -2,8 +2,7 @@ package com.example.shop.controller;
 
 import com.example.shop.dto.CartItemDTO;
 import com.example.shop.dto.request.CartItemRequest;
-import com.example.shop.model.ApiReponse;
-import com.example.shop.model.CartItem;
+import com.example.shop.model.ApiResponse;
 import com.example.shop.service.CartItemServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,30 +17,30 @@ import java.util.List;
 public class CartController {
 
     @Autowired
-    private final CartItemServiceImpl cartItemService;
+    private  CartItemServiceImpl cartItemService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiReponse<List<CartItemDTO>>> getAllCartitems(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartitems(@PathVariable Long userId) {
         return cartItemService.getAllCartItems(userId);
     }
 
     @PostMapping("/add")
-    public ResponseEntity<ApiReponse<CartItemDTO>> addItemToCart(@RequestBody CartItemRequest cartItemRequest) {
+    public ResponseEntity<ApiResponse<CartItemDTO>> addItemToCart(@RequestBody CartItemRequest cartItemRequest) {
         return cartItemService.addItemToCart(cartItemRequest);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ApiReponse<CartItemDTO>> updateItemToCart(@RequestBody CartItemRequest cartItemRequest) {
+    public ResponseEntity<ApiResponse<CartItemDTO>> updateItemToCart(@RequestBody CartItemRequest cartItemRequest) {
         return cartItemService.updateItemToCart(cartItemRequest);
     }
     @DeleteMapping("/remove")
-    public ResponseEntity<ApiReponse<String>> deleteItem(@RequestParam Long userId,@RequestParam Long bookId) {
+    public ResponseEntity<ApiResponse<String>> deleteItem(@RequestParam Long userId,@RequestParam Long bookId) {
         return cartItemService.deleteItem(userId, bookId);
     }
 
 
     @DeleteMapping("/clear/{userId}")
-    public ResponseEntity<ApiReponse<String>> deleteAllCartItems(@RequestParam Long userId) {
+    public ResponseEntity<ApiResponse<String>> deleteAllCartItems(@RequestParam Long userId) {
         return cartItemService.deleteAllCartItems(userId);
     }
 }
