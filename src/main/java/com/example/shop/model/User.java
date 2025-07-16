@@ -55,6 +55,8 @@ public class User {
 
     private Boolean isDeleted;
 
+    private String backgroundUrl;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -160,5 +162,13 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    public String getBackgroundUrl() {
+        return backgroundUrl;
+    }
+
+    public void setBackgroundUrl(String backgroundUrl) {
+        this.backgroundUrl = backgroundUrl;
     }
 }

@@ -3,6 +3,7 @@ package com.example.shop.service;
 import com.example.shop.dto.UserDTO;
 import com.example.shop.dto.mapper.UserMapper;
 import com.example.shop.dto.request.LoginRequest;
+import com.example.shop.dto.request.RefreshTokenRequest;
 import com.example.shop.model.ApiResponse;
 import com.example.shop.model.User;
 import com.example.shop.repository.UserRepository;
@@ -21,6 +22,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -57,7 +60,7 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
     }
 
     public ResponseEntity<ApiResponse<UserDTO>> login(LoginRequest loginRequest) {
-        log.info("🔐 [login] Bắt đầu xử lý đăng nhập cho: {}", loginRequest.getEmail());
+        log.info(" [login] Bắt đầu xử lý đăng nhập cho: {}", loginRequest.getEmail());
 
         User user = userRepository.findByEmail(loginRequest.getEmail());
         if (user == null) {
@@ -75,13 +78,19 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
             );
         }
 
-        String token = jwtTokenProvider.generateToken(user);
+        String accessToken = jwtTokenProvider.generateAccessToken(user);
+        String refreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        log.info(" [login] Access Token: {}", accessToken);
+        log.info(" [login] Refresh Token: {}", refreshToken);
+
         UserDTO userDTO = userMapper.toDto(user);
-        userDTO.setToken(token); // đảm bảo UserDTO có trường token
+        userDTO.setToken(accessToken);
+        userDTO.setRefreshToken(refreshToken);
 
-        log.info("[login] token: {}",token);
+        log.info("[login] token: {}",accessToken);
 
-        log.info("✅ [login] Đăng nhập thành công cho: {}", loginRequest.getEmail());
+        log.info(" [login] Đăng nhập thành công cho: {}", loginRequest.getEmail());
         return ResponseEntity.ok(
                 new ApiResponse<>(HttpStatus.OK.value(), "Đăng nhập thành công!", userDTO)
         );
@@ -107,7 +116,7 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
             log.info(" [createUser] Tạo tài khoản thành công với ID: {}", createdUser.getId());
 
             return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo người dùng thành công!", userDTO)
+                    new ApiResponse<>(HttpStatus.OK.value(), "Tạo người dùng thành công!", userDTO)
             );
         } catch (Exception e) {
             log.error(" [createUser] Lỗi khi tạo tài khoản: {}", e.getMessage(), e);
@@ -115,5 +124,26 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
                     new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đăng ký không thành công do lỗi hệ thống!", null)
             );
         }
+    }
+
+    public ResponseEntity<ApiResponse<RefreshTokenRequest>> refreshToken(RefreshTokenRequest refreshTokenRequest) {
+        String refreshToken = refreshTokenRequest.getRefreshToken();
+
+        if (!jwtTokenProvider.validateToken(refreshToken)) {
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Refresh token không hợp lệ",null));
+        }
+
+        String email = jwtTokenProvider.extractUsername(refreshToken);
+        User user = userRepository.findByEmail(email);
+        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+
+        String newAccessToken = jwtTokenProvider.generateAccessToken(user);
+        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
+
+        RefreshTokenRequest refreshTokenRequest1 = new RefreshTokenRequest();
+        refreshTokenRequest1.setRefreshToken(newRefreshToken);
+        refreshTokenRequest1.setAccessToken(newAccessToken);
+
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(),"Lấy Token mới thành công!",refreshTokenRequest1));
     }
 }

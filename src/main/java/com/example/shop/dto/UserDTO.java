@@ -12,6 +12,24 @@ public class UserDTO {
     private String address;
     private String avatarUrl;
     private String role;
+    private String refreshToken;
+    private String backgroundUrl;
+
+    public String getBackgroundUrl() {
+        return backgroundUrl;
+    }
+
+    public void setBackgroundUrl(String backgroundUrl) {
+        this.backgroundUrl = backgroundUrl;
+    }
+
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
 
     public Long getId() {
         return id;

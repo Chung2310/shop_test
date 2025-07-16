@@ -12,17 +12,28 @@ import java.util.stream.Collectors;
 @Component
 public class JwtTokenProvider {
 
-    private final String SECRET_KEY = "yourSecretKeyChangeMe";
+    private final String SECRET_KEY = "SECRET_KEY";
+    private final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 60;         // 1 giờ
+    private final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24 * 7; // 7 ngày
 
-    public String generateToken(User user) {
+    public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", List.of(user.getRole())); // Ví dụ: ROLE_USER, ROLE_ADMIN
+        claims.put("roles", List.of(user.getRole()));
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getEmail()) // hoặc user.getUsername()
+                .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60))
+                .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY))
+                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .compact();
+    }
+
+    public String generateRefreshToken(User user) {
+        return Jwts.builder()
+                .setSubject(user.getEmail())
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY))
                 .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
                 .compact();
     }
@@ -57,4 +68,5 @@ public class JwtTokenProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
+
 }
