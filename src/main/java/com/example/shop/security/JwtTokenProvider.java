@@ -2,19 +2,31 @@ package com.example.shop.security;
 
 import com.example.shop.model.User;
 import io.jsonwebtoken.*;
+import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Component;
 
+import javax.crypto.SecretKey;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.Base64;
 
 @Component
 public class JwtTokenProvider {
 
-    private final String SECRET_KEY = "SECRET_KEY";
+    // Khóa đủ dài ≥ 512-bit (64 bytes)
+    private static final String SECRET = "jT7ZqF9YpLwXyKmBp9rQvUs4EzCeRgThJnAoSdFgHiJkLmNoPqRsTuVwXyZaBcDe";
+
+    private final SecretKey SECRET_KEY;
+    private final String BASE64_SECRET_KEY;
     private final long ACCESS_TOKEN_VALIDITY = 1000 * 60 * 60;         // 1 giờ
     private final long REFRESH_TOKEN_VALIDITY = 1000 * 60 * 60 * 24 * 7; // 7 ngày
+
+    public JwtTokenProvider() {
+        this.SECRET_KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
+        this.BASE64_SECRET_KEY = Base64.getEncoder().encodeToString(SECRET.getBytes());
+    }
 
     public String generateAccessToken(User user) {
         Map<String, Object> claims = new HashMap<>();
@@ -25,7 +37,7 @@ public class JwtTokenProvider {
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY))
-                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS512)
                 .compact();
     }
 
@@ -34,13 +46,16 @@ public class JwtTokenProvider {
                 .setSubject(user.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY))
-                .signWith(SignatureAlgorithm.HS512, SECRET_KEY)
+                .signWith(SECRET_KEY, SignatureAlgorithm.HS512)
                 .compact();
     }
 
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
+            Jwts.parserBuilder()
+                    .setSigningKey(SECRET_KEY)
+                    .build()
+                    .parseClaimsJws(token);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             return false;
@@ -48,16 +63,18 @@ public class JwtTokenProvider {
     }
 
     public String extractUsername(String token) {
-        return Jwts.parser()
+        return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
+                .build()
                 .parseClaimsJws(token)
                 .getBody()
                 .getSubject();
     }
 
     public List<GrantedAuthority> extractAuthorities(String token) {
-        Claims claims = Jwts.parser()
+        Claims claims = Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY)
+                .build()
                 .parseClaimsJws(token)
                 .getBody();
 
@@ -68,5 +85,4 @@ public class JwtTokenProvider {
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());
     }
-
 }

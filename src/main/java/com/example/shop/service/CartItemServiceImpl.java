@@ -76,7 +76,9 @@ public class CartItemServiceImpl implements CartItemService {
         });
 
         if (cartItemOptional.isPresent()) {
-            logger.debug("[addItemToCart] Sản phẩm đã có sẵn trong giỏ. Không tạo mới.");
+            cartItem.setQuantity(cartItemRequest.getQuantity() + cartItemRequest.getQuantity());
+            cartItemRepository.save(cartItem);
+            logger.debug("[addItemToCart] Sản phẩm đã có sẵn trong giỏ. Cộng thêm số lượng.");
         }
 
         cartItemRepository.save(cartItem);
