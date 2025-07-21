@@ -22,14 +22,15 @@ import java.util.Optional;
 @Service
 @RequiredArgsConstructor
 public class CartItemServiceImpl implements CartItemService {
-    @Autowired
-    private  UserRepository userRepository;
-    @Autowired
-    private  BookRepository bookRepository;
+
     @Autowired
     private  CartItemMapper cartItemMapper;
     @Autowired
     private  CartItemRepository cartItemRepository;
+    @Autowired
+    private UserServiceImpl userService;
+    @Autowired
+    private BookServiceImpl bookService;
 
     private static final Logger logger = LoggerFactory.getLogger(CartItemServiceImpl.class);
 
@@ -57,20 +58,8 @@ public class CartItemServiceImpl implements CartItemService {
             logger.debug("[addItemToCart] Sản phẩm chưa tồn tại trong giỏ. Tiến hành tạo mới.");
 
             CartItem newCartItem = new CartItem();
-            newCartItem.setUser(
-                    userRepository.findById(cartItemRequest.getUserId())
-                            .orElseThrow(() -> {
-                                logger.error("[addItemToCart] ❌ Không tìm thấy User với ID: {}", cartItemRequest.getUserId());
-                                return new RuntimeException("Không tìm thấy người dùng!");
-                            })
-            );
-            newCartItem.setBook(
-                    bookRepository.findById(cartItemRequest.getBookId())
-                            .orElseThrow(() -> {
-                                logger.error("[addItemToCart] ❌ Không tìm thấy Book với ID: {}", cartItemRequest.getBookId());
-                                return new RuntimeException("Không tìm thấy sách!");
-                            })
-            );
+            newCartItem.setUser(userService.findUserById(cartItemRequest.getUserId()));
+            newCartItem.setBook(bookService.findBookById(cartItemRequest.getBookId()));
             newCartItem.setQuantity(cartItemRequest.getQuantity());
             return newCartItem;
         });

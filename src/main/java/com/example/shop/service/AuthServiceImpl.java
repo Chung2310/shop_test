@@ -33,10 +33,10 @@ import java.nio.file.StandardCopyOption;
 import java.util.*;
 
 @Service
-@RequiredArgsConstructor
 public class AuthServiceImpl implements UserDetailsService, AuthService {
+
     @Autowired
-    private UserRepository userRepository;
+    private UserServiceImpl userServiceImpl;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -50,7 +50,7 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         log.info("🔍 [loadUserByUsername] Đang tìm người dùng theo email: {}", email);
 
-        User user = userRepository.findByEmail(email);
+        User user = userServiceImpl.findUserByEmail(email);
 
         if (user == null) {
             log.warn(" [loadUserByUsername] Không tìm thấy người dùng với email: {}", email);
@@ -69,7 +69,7 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
     public ResponseEntity<ApiResponse<UserDTO>> login(LoginRequest loginRequest) {
         log.info(" [login] Bắt đầu xử lý đăng nhập cho: {}", loginRequest.getEmail());
 
-        User user = userRepository.findByEmail(loginRequest.getEmail());
+        User user = userServiceImpl.findUserByEmail(loginRequest.getEmail());
         if (user == null) {
             log.warn(" [login] Không tìm thấy người dùng với email: {}", loginRequest.getEmail());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(
@@ -104,150 +104,61 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
     }
 
     @Override
-    public ResponseEntity<ApiResponse<UserDTO>> updateUser(UserUpdateRequest userUpdateRequest) {
-        log.info(" [updateUser] Bắt đầu update tài khoản cho id: {}", userUpdateRequest.getId());
-        User user = userRepository.findById(userUpdateRequest.getId()).orElse(null);
+    public ResponseEntity<ApiResponse<UserDTO>> register(User user) {
+        log.info("Yêu cầu đăng ký với email: {}", user.getEmail());
 
-        if(user == null) {
-            log.warn(" [updateUser] Tài khoản không tồn tại trong hệ thống: {}", userUpdateRequest.getId());
-            return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.CONFLICT.value(), "Tài khoản không tồn tại!", null)
-            );
+        // Kiểm tra nếu email đã tồn tại
+        if (userServiceImpl.findUserByEmail(user.getEmail()) != null) {
+            log.warn("Email {} đã tồn tại trong hệ thống.", user.getEmail());
+            return ResponseEntity
+                    .status(HttpStatus.CONFLICT)
+                    .body(new ApiResponse<>(409, "Tài khoản đã tồn tại!", null));
         }
 
-        user.setFullName(userUpdateRequest.getFullName());
-        user.setAddress(userUpdateRequest.getAddress());
-        user.setPhone(userUpdateRequest.getPhone());
+        // Mã hóa mật khẩu
+        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        log.debug("Mật khẩu đã được mã hóa cho email: {}", user.getEmail());
 
-        userRepository.save(user);
+        // Lưu người dùng
+        User savedUser = userServiceImpl.saveUser(user);
+        log.info("Tạo mới người dùng thành công: ID = {}, Email = {}", savedUser.getId(), savedUser.getEmail());
 
-        UserDTO userDTO = userMapper.toDto(user);
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Update thông tin người dùng thành công!",userDTO));
-    }
+        UserDTO userDTO = userMapper.toDto(savedUser);
 
-    public ResponseEntity<ApiResponse<UserDTO>> createUser(User user) {
-        log.info(" [createUser] Bắt đầu tạo tài khoản mới cho email: {}", user.getEmail());
-
-        if (userRepository.findByEmail(user.getEmail()) != null) {
-            log.warn(" [createUser] Email đã tồn tại trong hệ thống: {}", user.getEmail());
-            return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.CONFLICT.value(), "Tài khoản đã tồn tại!", null)
-            );
-        }
-
-        try {
-            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            User createdUser = userRepository.save(user);
-
-            UserDTO userDTO = userMapper.toDto(createdUser);
-
-            log.info(" [createUser] Tạo tài khoản thành công với ID: {}", createdUser.getId());
-
-            return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Tạo người dùng thành công!", userDTO)
-            );
-        } catch (Exception e) {
-            log.error(" [createUser] Lỗi khi tạo tài khoản: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đăng ký không thành công do lỗi hệ thống!", null)
-            );
-        }
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(new ApiResponse<>(201, "Tạo người dùng mới thành công!", userDTO));
     }
 
     public ResponseEntity<ApiResponse<RefreshTokenRequest>> refreshToken(RefreshTokenRequest refreshTokenRequest) {
-        String refreshToken = refreshTokenRequest.getRefreshToken();
-
-        if (!jwtTokenProvider.validateToken(refreshToken)) {
-            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Refresh token không hợp lệ",null));
-        }
-
-        String email = jwtTokenProvider.extractUsername(refreshToken);
-        User user = userRepository.findByEmail(email);
-        if (user == null) return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-
-        String newAccessToken = jwtTokenProvider.generateAccessToken(user);
-        String newRefreshToken = jwtTokenProvider.generateRefreshToken(user);
-
-        RefreshTokenRequest refreshTokenRequest1 = new RefreshTokenRequest();
-        refreshTokenRequest1.setRefreshToken(newRefreshToken);
-        refreshTokenRequest1.setAccessToken(newAccessToken);
-
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(),"Lấy Token mới thành công!",refreshTokenRequest1));
-    }
-
-    public ResponseEntity<ApiResponse<String>> changePassword(ChangePasswordRequest changePasswordRequest) {
-        User user = userRepository.findById(changePasswordRequest.getId()).orElseThrow();
-
-        PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-
-        if (passwordEncoder.matches(changePasswordRequest.getOldPassowrd(), user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassowrd()));
-            userRepository.save(user);
-            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), "Đổi mật khẩu thành công!", null));
-        } else {
-            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Sai mật khẩu cũ!", null));
-        }
-    }
-
-    public ResponseEntity<ApiResponse<String>> uploadAvatar(Long id, String mode, MultipartFile file) {
-        String UPLOAD_DIR = mode+"/";
-
         try {
-            // 1. Kiểm tra file có rỗng không
-            if (file.isEmpty()) {
-                System.out.println("[UPLOAD] File trống!");
-                return ResponseEntity.badRequest().body(
-                        new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "File không được để trống!", null)
-                );
+            // 1. Validate token
+            if (!jwtTokenProvider.validateToken(refreshTokenRequest.getRefreshToken())) {
+                log.warn("Refresh token không hợp lệ hoặc đã hết hạn");
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                        .body(new ApiResponse<>(HttpStatus.UNAUTHORIZED.value(), "Refresh token không hợp lệ",null));
             }
 
-            // 2. Kiểm tra người dùng có tồn tại không
-            Optional<User> optionalUser = userRepository.findById(id);
-            if (optionalUser.isEmpty()) {
-                System.out.println("[UPLOAD] Không tìm thấy người dùng với id: " + id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Không tìm thấy người dùng!", null)
-                );
-            }
+            // 2. Trích xuất username từ token cũ
+            String email = jwtTokenProvider.extractUsername(refreshTokenRequest.getRefreshToken());
+            log.info("Đang làm mới token cho user: {}", email);
 
-            User user = optionalUser.get();
+            // 3. Tìm user và tạo token mới
+            User user = userServiceImpl.findUserByEmail(email);
 
-            // 3. Log thông tin file
-            System.out.println("[UPLOAD] Nhận được file: " + file.getOriginalFilename());
-            System.out.println("[UPLOAD] Kích thước: " + file.getSize() + " bytes");
-            System.out.println("[UPLOAD] Content-Type: " + file.getContentType());
+            RefreshTokenRequest request = new RefreshTokenRequest();
+            request.setAccessToken(jwtTokenProvider.generateAccessToken(user));
+            request.setRefreshToken(jwtTokenProvider.generateRefreshToken(user));
 
-            // 4. Tạo thư mục nếu chưa tồn tại
-            File uploadDir = new File(UPLOAD_DIR);
-            if (!uploadDir.exists()) {
-                boolean created = uploadDir.mkdirs();
-                System.out.println("[UPLOAD] Tạo thư mục " + UPLOAD_DIR + ": " + created);
-            }
+            log.info("Token mới được tạo cho user: {}", email);
 
-            // 5. Tạo tên file duy nhất và đường dẫn
-            String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
-            Path path = Paths.get(UPLOAD_DIR + fileName);
+            return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(),"Refresh token thành công!" ,request));
 
-            // 6. Lưu file vào server
-            Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("[UPLOAD] Lưu file tại: " + path.toAbsolutePath());
-
-            // 7. Cập nhật đường dẫn avatar trong database
-            user.setAvatarUrl(fileName);  // hoặc lưu cả đường dẫn nếu muốn
-            userRepository.save(user);
-            System.out.println("[UPLOAD] Đã cập nhật avatar cho user ID: " + id);
-
-            // 8. Trả kết quả thành công
-            return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Tải lên avatar thành công!", fileName)
-            );
-
-        } catch (IOException e) {
-            e.printStackTrace(); // Log lỗi chi tiết
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Thất bại trong quá trình tải file!", null)
-            );
+        } catch (Exception e) {
+            log.error("Lỗi khi làm mới token: {}", e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Lỗi hệ thống khi làm mới token",null));
         }
     }
 

@@ -30,6 +30,10 @@ public class BookServiceImpl implements  BookService {
     @Autowired
     private BookMapper bookMapper;
 
+    public Book findBookById(Long id) {
+        return bookRepository.findById(id).orElse(null);
+    }
+
     public ResponseEntity<ApiResponse<List<BookDTO>>> getAllBooks() {
         logger.info("[getAllBooks] Đang lấy toàn bộ danh sách sách");
 
