@@ -16,7 +16,11 @@ public class WebConfig implements WebMvcConfigurer {
     }
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("/avatar/**","/background/**")
+        registry.addResourceHandler("/avatar/**")
                 .addResourceLocations("file:avatar/");
+
+        registry.addResourceHandler("/background/**")
+                .addResourceLocations("file:background/");
     }
+
 }

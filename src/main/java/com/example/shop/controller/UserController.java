@@ -19,12 +19,7 @@ public class UserController {
     @Autowired
     private UserServiceImpl userService;
 
-    @PostMapping("/createUser")
-    public ResponseEntity<ApiResponse<UserDTO>> createUser(@RequestBody User user) {
-        return userService.createUser(user);
-    }
-
-    @PostMapping("/updateUser")
+    @PostMapping("/update")
     public ResponseEntity<ApiResponse<UserDTO>> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         return userService.updateUser(userUpdateRequest);
     }
@@ -35,8 +30,8 @@ public class UserController {
     }
 
     @PostMapping("/uploadImage/{id}")
-    ResponseEntity<ApiResponse<String>> uploadAvatar(@PathVariable Long id, @RequestParam String mode, @RequestParam("image") MultipartFile file) {
-        return userService.uploadAvatar(id,mode,file);
+    ResponseEntity<ApiResponse<String>> uploadAvatar(@PathVariable Long id, @RequestParam String mode, @RequestPart("image") MultipartFile file) {
+        return userService.uploadImage(id,mode,file);
     }
 }
 

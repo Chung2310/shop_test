@@ -72,7 +72,7 @@ public class BookServiceImpl implements  BookService {
         }
     }
 
-
+    //admin
     public ResponseEntity<ApiResponse<BookDTO>> createBook(BookDTO bookDTO) {
         logger.info("[createBook] Tạo sách mới: {}", bookDTO);
         Book book  = bookMapper.toEntity(bookDTO);
@@ -87,7 +87,7 @@ public class BookServiceImpl implements  BookService {
         }
     }
 
-
+    //admin
     public ResponseEntity<ApiResponse<Book>> updateBook(Book book) {
         logger.info("[updateBook] Cập nhật sách: {}", book);
 
@@ -103,7 +103,7 @@ public class BookServiceImpl implements  BookService {
         }
     }
 
-
+    //admin
     public ResponseEntity<ApiResponse<Book>> deleteBook(Long id) {
         logger.info("[deleteBook] Xoá mềm sách với ID: {}", id);
 

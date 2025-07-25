@@ -20,7 +20,7 @@ public class CartController {
     private  CartItemServiceImpl cartItemService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartitems(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartItemsByUserId(@PathVariable Long userId) {
         return cartItemService.getAllCartItems(userId);
     }
 
@@ -37,7 +37,6 @@ public class CartController {
     public ResponseEntity<ApiResponse<String>> deleteItem(@RequestParam Long userId,@RequestParam Long bookId) {
         return cartItemService.deleteItem(userId, bookId);
     }
-
 
     @DeleteMapping("/clear/{userId}")
     public ResponseEntity<ApiResponse<String>> deleteAllCartItems(@RequestParam Long userId) {

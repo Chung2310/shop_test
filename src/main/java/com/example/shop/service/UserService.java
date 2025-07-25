@@ -15,7 +15,6 @@ public interface UserService {
     User findUserByUsername(String username);
     User findUserByEmail(String email);
     User saveUser(User user);
-    ResponseEntity<ApiResponse<UserDTO>> createUser(User user);
     ResponseEntity<ApiResponse<UserDTO>> updateUser(UserUpdateRequest userUpdateRequest);
     ResponseEntity<ApiResponse<String>> changePassword(ChangePasswordRequest changePasswordRequest);
 }

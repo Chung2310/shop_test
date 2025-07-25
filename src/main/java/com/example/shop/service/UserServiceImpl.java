@@ -38,6 +38,7 @@ public class UserServiceImpl implements UserService {
 
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
+    //admin
     public List<User> getAllUsers(){
         log.info("[getAllUsers] Lấy toàn bộ thông tin user");
         return userRepository.findAll();
@@ -61,35 +62,6 @@ public class UserServiceImpl implements UserService {
     public User saveUser(User user) {
         log.info("[saveUser] Lưu người dùng với email: {}", user.getEmail());
         return userRepository.save(user);
-    }
-
-    public ResponseEntity<ApiResponse<UserDTO>> createUser(User user) {
-        log.info("[createUser] Bắt đầu tạo tài khoản mới cho email: {}", user.getEmail());
-
-        if (userRepository.findUserByEmail(user.getEmail()) != null) {
-            log.warn("[createUser] Email đã tồn tại: {}", user.getEmail());
-            return ResponseEntity.status(HttpStatus.CONFLICT.value()).body(
-                    new ApiResponse<>(HttpStatus.CONFLICT.value(), "Tài khoản đã tồn tại!", null)
-            );
-        }
-
-        try {
-            PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-            user.setPassword(passwordEncoder.encode(user.getPassword()));
-            User createdUser = userRepository.save(user);
-
-            UserDTO userDTO = userMapper.toDto(createdUser);
-            log.info("[createUser] Tạo tài khoản thành công: ID = {}, Email = {}", createdUser.getId(), createdUser.getEmail());
-
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo người dùng thành công!", userDTO)
-            );
-        } catch (Exception e) {
-            log.error("[createUser] Lỗi khi tạo tài khoản: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đăng ký không thành công do lỗi hệ thống!", null)
-            );
-        }
     }
 
 
@@ -148,13 +120,13 @@ public class UserServiceImpl implements UserService {
     }
 
 
-    public ResponseEntity<ApiResponse<String>> uploadAvatar(Long id, String mode, MultipartFile file) {
-        log.info("[uploadAvatar] Bắt đầu upload avatar cho user ID: {}", id);
+    public ResponseEntity<ApiResponse<String>> uploadImage(Long id, String mode, MultipartFile file) {
+        log.info("[uploadImage] Bắt đầu upload "+mode+" cho user ID: {}", id);
         String UPLOAD_DIR = mode + "/";
 
         try {
             if (file.isEmpty()) {
-                log.warn("[uploadAvatar] File trống!");
+                log.warn("[uploadImage] File trống!");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
                         new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "File không được để trống!", null)
                 );
@@ -162,37 +134,37 @@ public class UserServiceImpl implements UserService {
 
             User user = userRepository.findUserById(id);
             if (user == null) {
-                log.warn("[uploadAvatar] Không tìm thấy người dùng ID: {}", id);
+                log.warn("[uploadImage] Không tìm thấy người dùng ID: {}", id);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
                         new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Không tìm thấy người dùng!", null)
                 );
             }
 
-            log.info("[uploadAvatar] File nhận được: {}", file.getOriginalFilename());
-            log.debug("[uploadAvatar] Kích thước: {} bytes, Content-Type: {}", file.getSize(), file.getContentType());
+            log.info("[uploadImage] File nhận được: {}", file.getOriginalFilename());
+            log.debug("[uploadImage] Kích thước: {} bytes, Content-Type: {}", file.getSize(), file.getContentType());
 
             File uploadDir = new File(UPLOAD_DIR);
             if (!uploadDir.exists()) {
                 boolean created = uploadDir.mkdirs();
-                log.info("[uploadAvatar] Tạo thư mục '{}': {}", UPLOAD_DIR, created);
+                log.info("[uploadImage] Tạo thư mục '{}': {}", UPLOAD_DIR, created);
             }
 
             String fileName = UUID.randomUUID() + "_" + file.getOriginalFilename();
             Path path = Paths.get(UPLOAD_DIR + fileName);
 
             Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
-            log.info("[uploadAvatar] Đã lưu file tại: {}", path.toAbsolutePath());
+            log.info("[uploadImage] Đã lưu file tại: {}", path.toAbsolutePath());
 
             user.setAvatarUrl(fileName);
             userRepository.save(user);
-            log.info("[uploadAvatar] Cập nhật avatar thành công cho user ID: {}", id);
+            log.info("[uploadImage] Cập nhật "+mode+" thành công cho user ID: {}", id);
 
             return ResponseEntity.status(HttpStatus.OK).body(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Tải lên avatar thành công!", fileName)
+                    new ApiResponse<>(HttpStatus.OK.value(), "Tải lên "+mode+" thành công!", fileName)
             );
 
         } catch (IOException e) {
-            log.error("[uploadAvatar] Lỗi khi upload file: {}", e.getMessage(), e);
+            log.error("[uploadImage] Lỗi khi upload file: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
                     new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Thất bại trong quá trình tải file!", null)
             );

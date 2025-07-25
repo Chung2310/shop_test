@@ -1,7 +1,11 @@
 package com.example.shop.repository;
 
-import com.example.shop.model.Orders;
+import com.example.shop.model.Order;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface OrderRepository extends JpaRepository<Orders, Long> {
+import java.util.List;
+
+public interface OrderRepository extends JpaRepository<Order, Long> {
+    List<Order> findOrderByUserId(Long userId);
+    Order findOrderById(Long orderId);
 }
