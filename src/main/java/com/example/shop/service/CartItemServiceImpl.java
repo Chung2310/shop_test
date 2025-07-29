@@ -38,6 +38,11 @@ public class CartItemServiceImpl implements CartItemService {
     @Override
     public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartItems(Long userId) {
         logger.info("[getAllCartItems] Lấy giỏ hàng cho userId: {}", userId);
+        if(userId == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "userId bị trống!",null)
+            );
+        }
 
         List<CartItem> cartItems = cartItemRepository.findByUserId(userId);
         logger.debug("[getAllCartItems] Số lượng sản phẩm trong giỏ hàng: {}", cartItems.size());
@@ -51,6 +56,11 @@ public class CartItemServiceImpl implements CartItemService {
     public ResponseEntity<ApiResponse<CartItemDTO>> addItemToCart(CartItemRequest cartItemRequest) {
         logger.info("[addItemToCart] Thêm sản phẩm vào giỏ: userId={}, bookId={}, quantity={}",
                 cartItemRequest.getUserId(), cartItemRequest.getBookId(), cartItemRequest.getQuantity());
+        if((cartItemRequest.getUserId() == null) || (cartItemRequest.getQuantity() == 0) || (cartItemRequest.getBookId() == null)){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin đê thêm vào giỏ hàng!",null)
+            );
+        }
 
         Optional<CartItem> cartItemOptional = cartItemRepository.findByUserIdAndBookId(
                 cartItemRequest.getUserId(), cartItemRequest.getBookId());
@@ -78,6 +88,12 @@ public class CartItemServiceImpl implements CartItemService {
 
     @Override
     public ResponseEntity<ApiResponse<CartItemDTO>> updateItemToCart(CartItemRequest cartItemRequest) {
+        if (cartItemRequest.getBookId() == null || cartItemRequest.getQuantity() == 0 || cartItemRequest.getUserId() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin để cập nhập item giỏ hàng!", null)
+            );
+        }
+
         logger.info("[updateItemToCart] Cập nhật số lượng: userId={}, bookId={}, quantity={}",
                 cartItemRequest.getUserId(), cartItemRequest.getBookId(), cartItemRequest.getQuantity());
 
@@ -97,6 +113,12 @@ public class CartItemServiceImpl implements CartItemService {
 
     @Override
     public ResponseEntity<ApiResponse<String>> deleteItem(Long userId, Long bookId) {
+        if(userId == null || bookId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin để xoá item giỏ hàng!", null)
+            );
+        }
+
         logger.info("[deleteItem] Xoá sản phẩm: userId={}, bookId={}", userId, bookId);
 
         CartItem item = cartItemRepository.findByUserIdAndBookId(userId, bookId)
@@ -113,6 +135,12 @@ public class CartItemServiceImpl implements CartItemService {
     @Transactional
     @Override
     public ResponseEntity<ApiResponse<String>> deleteAllCartItems(Long userId) {
+        if(userId == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin để xoá!",null)
+            );
+        }
+
         logger.info("[deleteAllCartItems] Xoá toàn bộ giỏ hàng cho userId: {}", userId);
 
         cartItemRepository.deleteByUserId(userId);

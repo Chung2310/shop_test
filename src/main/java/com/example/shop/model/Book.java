@@ -25,7 +25,7 @@ public class Book {
     @NotBlank(message = "Không được để trống tác giả")
     private String author;
 
-    private boolean deleted = false;
+    private boolean isDeleted = false;
 
     @NotBlank(message = "Không được để trống Nhà cung cấp")
     private String publisher;
@@ -84,11 +84,11 @@ public class Book {
     }
 
     public boolean isDeleted() {
-        return deleted;
+        return isDeleted;
     }
 
     public void setDeleted(boolean deleted) {
-        this.deleted = deleted;
+        this.isDeleted = deleted;
     }
 
     public String getPublisher() {

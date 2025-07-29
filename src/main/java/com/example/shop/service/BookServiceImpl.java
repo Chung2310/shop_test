@@ -15,6 +15,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -31,6 +32,9 @@ public class BookServiceImpl implements  BookService {
     private BookMapper bookMapper;
 
     public Book findBookById(Long id) {
+        if(id == null){
+            return null;
+        }
         return bookRepository.findById(id).orElse(null);
     }
 
@@ -39,7 +43,14 @@ public class BookServiceImpl implements  BookService {
 
         List<Book> books = bookRepository.findAll();
 
-        List<BookDTO> bookDTOS = bookMapper.toDtoList(books);
+        List<Book> bookList = new ArrayList<>();
+        for (Book book : books) {
+            if(!book.isDeleted()){
+                bookList.add(book);
+            }
+        }
+
+        List<BookDTO> bookDTOS = bookMapper.toDtoList(bookList);
 
         logger.debug("[getAllBooks] Số lượng sách lấy được: {}", books.size());
 
@@ -49,6 +60,13 @@ public class BookServiceImpl implements  BookService {
 
     public ResponseEntity<ApiResponse<List<BookDTO>>> getBookByTitle(String title) {
         logger.info("[getBookByTitle] Tìm sách với tiêu đề chứa: '{}'", title);
+
+        if(title == null)
+        {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "Title trống!",null));
+        }
 
         List<Book> books = bookRepository.findByTitleContainingIgnoreCase(title);
         List<BookDTO> bookDTOList =  bookMapper.toDtoList(books);
@@ -60,6 +78,11 @@ public class BookServiceImpl implements  BookService {
 
     public ResponseEntity<ApiResponse<BookDTO>> getBookById(Long id) {
         logger.info("[getBookById] Tìm sách theo ID: {}", id);
+        if(id == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "id trống!",null)
+            );
+        }
 
         Optional<Book> book = bookRepository.findById(id);
         if (book.isPresent()) {
@@ -75,6 +98,13 @@ public class BookServiceImpl implements  BookService {
     //admin
     public ResponseEntity<ApiResponse<BookDTO>> createBook(BookDTO bookDTO) {
         logger.info("[createBook] Tạo sách mới: {}", bookDTO);
+        if(bookDTO == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "Thông tin sách bị trống!",null)
+            );
+        }
+
         Book book  = bookMapper.toEntity(bookDTO);
         book.setCreatedDate(LocalDateTime.now());
         Book savedBook = bookRepository.save(book);
@@ -90,6 +120,12 @@ public class BookServiceImpl implements  BookService {
     //admin
     public ResponseEntity<ApiResponse<Book>> updateBook(Book book) {
         logger.info("[updateBook] Cập nhật sách: {}", book);
+        if(book == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "Thông tin cập nhập sách trống!",null)
+            );
+        }
 
         Optional<Book> findedBook = bookRepository.findById(book.getId());
         if (findedBook.isPresent()) {
@@ -106,6 +142,12 @@ public class BookServiceImpl implements  BookService {
     //admin
     public ResponseEntity<ApiResponse<Book>> deleteBook(Long id) {
         logger.info("[deleteBook] Xoá mềm sách với ID: {}", id);
+        if(id ==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "id sách trống!",null)
+            );
+        }
 
         Optional<Book> optionalBook = bookRepository.findById(id);
         if (optionalBook.isPresent()) {

@@ -1,0 +1,68 @@
+package com.example.shop.dto;
+
+import jakarta.validation.constraints.*;
+
+import java.time.LocalDateTime;
+
+public class ReviewDTO {
+    private Long id;
+    @NotNull
+    private UserDTO userDTO;
+    @NotNull
+    private BookDTO bookDTO;
+    @Min(value = 1, message = "Rating phải từ 1 đến 5")
+    @Max(value = 5, message = "Rating phải từ 1 đến 5")
+    private int rating;
+    @NotBlank(message = "Nội dung đánh giá không được trống!")
+    @Size(min = 100)
+    private String comments;
+    private LocalDateTime createdAt;
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public UserDTO getUserDTO() {
+        return userDTO;
+    }
+
+    public void setUserDTO(UserDTO userDTO) {
+        this.userDTO = userDTO;
+    }
+
+    public BookDTO getBookDTO() {
+        return bookDTO;
+    }
+
+    public void setBookDTO(BookDTO bookDTO) {
+        this.bookDTO = bookDTO;
+    }
+
+    public int getRating() {
+        return rating;
+    }
+
+    public void setRating(int rating) {
+        this.rating = rating;
+    }
+
+    public String getComments() {
+        return comments;
+    }
+
+    public void setComments(String comments) {
+        this.comments = comments;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(LocalDateTime createdAt) {
+        this.createdAt = createdAt;
+    }
+}

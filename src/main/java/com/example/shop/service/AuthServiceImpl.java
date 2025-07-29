@@ -49,6 +49,9 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         log.info("🔍 [loadUserByUsername] Đang tìm người dùng theo email: {}", email);
+        if(email == null ){
+            return null;
+        }
 
         User user = userServiceImpl.findUserByEmail(email);
 
@@ -68,6 +71,11 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
 
     public ResponseEntity<ApiResponse<UserDTO>> login(LoginRequest loginRequest) {
         log.info(" [login] Bắt đầu xử lý đăng nhập cho: {}", loginRequest.getEmail());
+        if(loginRequest.getEmail() == null || loginRequest.getPassword() == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin đăng nhập!",null)
+            );
+        }
 
         User user = userServiceImpl.findUserByEmail(loginRequest.getEmail());
         if (user == null) {
@@ -106,6 +114,11 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
     @Override
     public ResponseEntity<ApiResponse<UserDTO>> register(User user) {
         log.info("Yêu cầu đăng ký với email: {}", user.getEmail());
+        if(user.getEmail() == null || user.getPassword() == null || user.getFullName() == null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin người dùng!",null)
+            );
+        }
 
         // Kiểm tra nếu email đã tồn tại
         if (userServiceImpl.findUserByEmail(user.getEmail()) != null) {
@@ -133,7 +146,13 @@ public class AuthServiceImpl implements UserDetailsService, AuthService {
 
     public ResponseEntity<ApiResponse<RefreshTokenRequest>> refreshToken(RefreshTokenRequest refreshTokenRequest) {
         try {
-            // 1. Validate token
+            if(refreshTokenRequest.getAccessToken() == null || refreshTokenRequest.getRefreshToken() == null){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                        new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                                "Thiếu thông tin yêu cầu!",null)
+                );
+            }
+
             if (!jwtTokenProvider.validateToken(refreshTokenRequest.getRefreshToken())) {
                 log.warn("Refresh token không hợp lệ hoặc đã hết hạn");
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
