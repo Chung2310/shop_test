@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -36,9 +37,18 @@ public class ReviewServiceImpl implements ReviewService {
     @Autowired
     private ReviewMapper reviewMapper;
 
-    private ReviewBook saveOrUpdateReview(ReviewBook reviewBook) {
+    @Autowired
+    @Lazy
+    private ReviewLikeServiceImpl reviewLikeService;
+
+    public ReviewBook saveOrUpdateReview(ReviewBook reviewBook) {
         logger.info("Saving or updating review: {}", reviewBook);
         return reviewRepository.save(reviewBook);
+    }
+
+    @Override
+    public ReviewBook findReviewByID(Long id) {
+        return reviewRepository.findReviewById(id);
     }
 
     @Override
@@ -66,22 +76,31 @@ public class ReviewServiceImpl implements ReviewService {
             );
         }
 
-        ReviewBook reviewBook = new ReviewBook();
-        reviewBook.setBook(bookService.findBookById(reviewDTO.getBookDTO().getId()));
-        reviewBook.setUser(userService.findUserById(reviewDTO.getUserDTO().getId()));
-        reviewBook.setRating(reviewDTO.getRating());
-        reviewBook.setComments(reviewDTO.getComments());
+        if (reviewRepository.existsByUserIdAndBookId(reviewDTO.getUserDTO().getId(), reviewDTO.getBookDTO().getId())) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Người dùng đã đánh giá sản phẩm!",null)
+            );
+        }
+        else {
+            ReviewBook reviewBook = new ReviewBook();
+            reviewBook.setBook(bookService.findBookById(reviewDTO.getBookDTO().getId()));
+            reviewBook.setUser(userService.findUserById(reviewDTO.getUserDTO().getId()));
+            reviewBook.setRating(reviewDTO.getRating());
+            reviewBook.setComments(reviewDTO.getComments());
 
-        ReviewBook savedReview = saveOrUpdateReview(reviewBook);
-        logger.info("Review created successfully: {}", savedReview);
+            ReviewBook savedReview = saveOrUpdateReview(reviewBook);
+            logger.info("Review created successfully: {}", savedReview);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo đánh giá thành công!", reviewMapper.toDto(savedReview))
-        );
+            return ResponseEntity.status(HttpStatus.CREATED).body(
+                    new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo đánh giá thành công!", reviewMapper.toDto(savedReview))
+            );
+        }
+
+
     }
 
     @Override
-    public ResponseEntity<ApiResponse<ReviewDTO>> deleteReview(Long reviewId) {
+    public ResponseEntity<ApiResponse<ReviewDTO>> deleteReviewById(Long reviewId) {
         logger.info("Deleting review with id: {}", reviewId);
 
         if (reviewId == null) {
@@ -158,7 +177,13 @@ public class ReviewServiceImpl implements ReviewService {
 
         List<ReviewBook> filteredReviews = new ArrayList<>();
         for (ReviewBook rb : reviewBooks) {
-            if (!rb.isDeleted()) {
+            if (!rb.isDeleted()  ) {
+                if(reviewLikeService.isLiked(rb.getUser().getId(),rb.getId())) {
+                    rb.setLikedByCurrentUser(true);
+                }
+                else {
+                    rb.setLikedByCurrentUser(false);
+                }
                 filteredReviews.add(rb);
             }
         }
@@ -237,6 +262,8 @@ public class ReviewServiceImpl implements ReviewService {
         }
 
         logger.info("✅ Kiểm tra hoàn tất. Tổng số sách chưa được review: {}", notReviewed.size());
+        logger.info("➡️  Dữ liệu đầu ra: bookIds = {}",
+                bookIds != null ? notReviewed : "null");
         logger.debug("📄 Danh sách bookId chưa review: {}", notReviewed);
 
         return ResponseEntity.ok(

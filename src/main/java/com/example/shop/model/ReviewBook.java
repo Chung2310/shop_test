@@ -30,6 +30,26 @@ public class ReviewBook {
 
     private LocalDateTime updatedAt;
 
+    private boolean likedByCurrentUser;
+
+    private int likeCount;
+
+    public int getLikeCount() {
+        return likeCount;
+    }
+
+    public void setLikeCount(int likeCount) {
+        this.likeCount = likeCount;
+    }
+
+    public boolean isLikedByCurrentUser() {
+        return likedByCurrentUser;
+    }
+
+    public void setLikedByCurrentUser(boolean likedByCurrentUser) {
+        this.likedByCurrentUser = likedByCurrentUser;
+    }
+
     public Long getId() {
         return id;
     }

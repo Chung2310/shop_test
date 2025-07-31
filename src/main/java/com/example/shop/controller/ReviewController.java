@@ -23,8 +23,8 @@ public class ReviewController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<ReviewDTO>> deleteReview(@PathVariable Long id) {
-        return reviewService.deleteReview(id);
+    public ResponseEntity<ApiResponse<ReviewDTO>> deleteReviewById(@PathVariable Long id) {
+        return reviewService.deleteReviewById(id);
     }
 
     @PostMapping("/update")
