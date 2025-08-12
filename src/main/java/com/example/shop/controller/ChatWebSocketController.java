@@ -1,9 +1,9 @@
 package com.example.shop.controller;
 
 import com.example.shop.model.ChatMessage;
+import com.example.shop.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
@@ -15,15 +15,14 @@ public class ChatWebSocketController {
     @Autowired
     private SimpMessagingTemplate messagingTemplate;
 
-    @MessageMapping("/sendMessage") // "/app/chat/send"
+    @Autowired
+    private ChatService chatService;
+
+    @MessageMapping("/sendMessage")
     @SendTo("/topic/messages")
-    public ChatMessage sendMessage(@Payload ChatMessage chatMessage) {
-        chatMessage.setTimestamp(LocalDateTime.now());
-        return chatMessage;
+    public ChatMessage sendMessage(ChatMessage message) {
+        message.setTimestamp(LocalDateTime.now());
+        return message;
     }
 
-    // Gửi riêng cho người nhận
-    public void sendToUser(ChatMessage chatMessage, Long receiverId) {
-        messagingTemplate.convertAndSend("/topic/messages/" + receiverId, chatMessage);
-    }
 }

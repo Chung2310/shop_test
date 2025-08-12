@@ -14,7 +14,7 @@ public class ReviewLike {
     private User user;
 
     @ManyToOne
-    private ReviewBook review;
+    private Review review;
 
     private LocalDateTime createdAt;
 
@@ -34,11 +34,11 @@ public class ReviewLike {
         this.user = user;
     }
 
-    public ReviewBook getReview() {
+    public Review getReview() {
         return review;
     }
 
-    public void setReview(ReviewBook review) {
+    public void setReview(Review review) {
         this.review = review;
     }
 

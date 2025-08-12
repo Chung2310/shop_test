@@ -4,7 +4,7 @@ import java.math.BigDecimal;
 
 public class OrderDetailDTO {
     private Long id;
-    private BookDTO bookDTO;
+    private ProductDTO productDTO;
     private int quantity;
     private BigDecimal unitPrice;
 
@@ -16,12 +16,12 @@ public class OrderDetailDTO {
         this.id = id;
     }
 
-    public BookDTO getBookDTO() {
-        return bookDTO;
+    public ProductDTO getProductDTO() {
+        return productDTO;
     }
 
-    public void setBookDTO(BookDTO bookDTO) {
-        this.bookDTO = bookDTO;
+    public void setProductDTO(ProductDTO productDTO) {
+        this.productDTO = productDTO;
     }
 
     public int getQuantity() {

@@ -1,9 +1,7 @@
 package com.example.shop.model;
 
-import jakarta.persistence.Entity;
-import jakarta.persistence.GeneratedValue;
-import jakarta.persistence.GenerationType;
-import jakarta.persistence.Id;
+import jakarta.persistence.*;
+
 
 import java.time.LocalDateTime;
 
@@ -13,8 +11,12 @@ public class ChatMessage {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-    private Long senderId;
-    private Long receiverId;
+    @ManyToOne
+    @JoinColumn(name = "sender_id")
+    private User sender;
+    @JoinColumn(name = "receiver_id")
+    @ManyToOne
+    private User receiver;
     private String message;
     private LocalDateTime timestamp;
 
@@ -22,24 +24,24 @@ public class ChatMessage {
         return id;
     }
 
+    public User getSender() {
+        return sender;
+    }
+
+    public void setSender(User sender) {
+        this.sender = sender;
+    }
+
+    public User getReceiver() {
+        return receiver;
+    }
+
+    public void setReceiver(User receiver) {
+        this.receiver = receiver;
+    }
+
     public void setId(Long id) {
         this.id = id;
-    }
-
-    public Long getSenderId() {
-        return senderId;
-    }
-
-    public void setSenderId(Long senderId) {
-        this.senderId = senderId;
-    }
-
-    public Long getReceiverId() {
-        return receiverId;
-    }
-
-    public void setReceiverId(Long receiverId) {
-        this.receiverId = receiverId;
     }
 
     public String getMessage() {

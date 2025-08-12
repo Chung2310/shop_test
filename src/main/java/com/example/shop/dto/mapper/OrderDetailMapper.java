@@ -7,10 +7,10 @@ import org.mapstruct.Mapping;
 
 import java.util.List;
 
-@Mapper(componentModel = "spring", uses = {BookMapper.class})
+@Mapper(componentModel = "spring", uses = {ProductMapper.class})
 public interface OrderDetailMapper {
 
-    @Mapping(source = "book", target = "bookDTO")
+    @Mapping(source = "product", target = "productDTO")
     OrderDetailDTO toDto(OrderDetail orderDetail);
 
     List<OrderDetailDTO> toDtoList(List<OrderDetail> orderDetails);

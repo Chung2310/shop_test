@@ -2,8 +2,7 @@ package com.example.shop.controller;
 
 import com.example.shop.dto.ContactDTO;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Contact;
-import com.example.shop.service.ContactServiceImpl;
+import com.example.shop.service.ContactService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +14,7 @@ import java.util.List;
 public class ContactController {
 
     @Autowired
-    private ContactServiceImpl  contactService;
+    private ContactService contactService;
 
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<List<ContactDTO>>> getContactsByUserId(@PathVariable Long userId) {

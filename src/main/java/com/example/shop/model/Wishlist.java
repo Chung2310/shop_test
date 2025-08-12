@@ -13,7 +13,7 @@ public class Wishlist {
     private User user;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    private Book book;
+    private Product product;
 
     public Long getId() {
         return id;
@@ -31,11 +31,11 @@ public class Wishlist {
         this.user = user;
     }
 
-    public Book getBook() {
-        return book;
+    public Product getBook() {
+        return product;
     }
 
-    public void setBook(Book book) {
-        this.book = book;
+    public void setBook(Product product) {
+        this.product = product;
     }
 }

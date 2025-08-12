@@ -2,7 +2,7 @@ package com.example.shop.controller;
 
 import com.example.shop.dto.WishlistDTO;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.service.WishlistServiceImpl;
+import com.example.shop.service.WishlistService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,7 +13,7 @@ import java.util.List;
 @RequestMapping("/api/wishlist")
 public class WishlistController {
     @Autowired
-    private WishlistServiceImpl  wishlistService;
+    private WishlistService wishlistService;
 
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<List<WishlistDTO>>> getWishlistsByUserId(Long userId) {

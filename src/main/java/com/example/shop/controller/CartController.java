@@ -3,7 +3,7 @@ package com.example.shop.controller;
 import com.example.shop.dto.CartItemDTO;
 import com.example.shop.dto.request.CartItemRequest;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.service.CartItemServiceImpl;
+import com.example.shop.service.CartItemService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +17,7 @@ import java.util.List;
 public class CartController {
 
     @Autowired
-    private  CartItemServiceImpl cartItemService;
+    private CartItemService cartItemService;
 
     @GetMapping("/{userId}")
     public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartItemsByUserId(@PathVariable Long userId) {

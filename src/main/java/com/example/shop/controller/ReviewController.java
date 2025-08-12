@@ -3,7 +3,7 @@ package com.example.shop.controller;
 import com.example.shop.dto.ReviewDTO;
 import com.example.shop.dto.request.ReviewRequest;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.service.ReviewServiceImpl;
+import com.example.shop.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,7 +15,7 @@ import java.util.List;
 public class ReviewController {
 
     @Autowired
-    private ReviewServiceImpl reviewService;
+    private ReviewService reviewService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<ReviewDTO>> createReview(@RequestBody ReviewDTO reviewDTO) {

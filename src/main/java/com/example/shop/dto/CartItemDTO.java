@@ -5,7 +5,7 @@ import lombok.Data;
 @Data
 public class CartItemDTO {
     private Long id;
-    private BookDTO book;
+    private ProductDTO book;
     private int quantity;
 
     public Long getId() {
@@ -16,11 +16,11 @@ public class CartItemDTO {
         this.id = id;
     }
 
-    public BookDTO getBook() {
+    public ProductDTO getBook() {
         return book;
     }
 
-    public void setBook(BookDTO book) {
+    public void setBook(ProductDTO book) {
         this.book = book;
     }
 

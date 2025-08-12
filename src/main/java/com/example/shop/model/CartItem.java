@@ -18,7 +18,7 @@ public class CartItem {
 
     @ManyToOne
     @JoinColumn(name = "book_id")
-    private Book book;
+    private Product product;
 
     private int quantity;
 
@@ -38,12 +38,12 @@ public class CartItem {
         this.user = user;
     }
 
-    public Book getBook() {
-        return book;
+    public Product getProduct() {
+        return product;
     }
 
-    public void setBook(Book book) {
-        this.book = book;
+    public void setProduct(Product product) {
+        this.product = product;
     }
 
     public int getQuantity() {

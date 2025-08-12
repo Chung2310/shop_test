@@ -9,7 +9,7 @@ public class ReviewDTO {
     @NotNull
     private UserDTO userDTO;
     @NotNull
-    private BookDTO bookDTO;
+    private ProductDTO productDTO;
     @Min(value = 1, message = "Rating phải từ 1 đến 5")
     @Max(value = 5, message = "Rating phải từ 1 đến 5")
     private int rating;
@@ -52,12 +52,12 @@ public class ReviewDTO {
         this.userDTO = userDTO;
     }
 
-    public BookDTO getBookDTO() {
-        return bookDTO;
+    public ProductDTO getProductDTO() {
+        return productDTO;
     }
 
-    public void setBookDTO(BookDTO bookDTO) {
-        this.bookDTO = bookDTO;
+    public void setProductDTO(ProductDTO productDTO) {
+        this.productDTO = productDTO;
     }
 
     public int getRating() {

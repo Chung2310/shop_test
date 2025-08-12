@@ -1,8 +1,7 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.ReviewDTO;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.service.ReviewLikeServiceImpl;
+import com.example.shop.service.ReviewLikeService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -12,7 +11,7 @@ import org.springframework.web.bind.annotation.*;
 public class ReviewLikeController {
 
     @Autowired
-    private ReviewLikeServiceImpl reviewService;
+    private ReviewLikeService reviewService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<Boolean>> toggleLike(@RequestParam Long userId, @RequestParam Long reviewId) {

@@ -1,19 +1,18 @@
 package com.example.shop.controller;
 
 import com.example.shop.dto.UserDTO;
-import com.example.shop.dto.request.ChangePasswordRequest;
 import com.example.shop.dto.request.LoginRequest;
 import com.example.shop.dto.request.RefreshTokenRequest;
-import com.example.shop.dto.request.UserUpdateRequest;
 import com.example.shop.model.ApiResponse;
 import com.example.shop.model.User;
-import com.example.shop.service.AuthServiceImpl;
+import com.example.shop.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.multipart.MultipartFile;
+
+import java.util.Map;
 
 
 @RestController
@@ -22,21 +21,30 @@ import org.springframework.web.multipart.MultipartFile;
 public class AuthController {
 
     @Autowired
-    private AuthServiceImpl authServiceImpl;
+    private AuthService authService;
 
     @PostMapping("/login")
     public ResponseEntity<ApiResponse<UserDTO>> login(@RequestBody LoginRequest loginRequest) {
-        return authServiceImpl.login(loginRequest);
+        return authService.login(loginRequest);
     }
 
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserDTO>> createUser(@RequestBody User user) {
-        return authServiceImpl.register(user);
+        return authService.register(user);
     }
 
     @PostMapping("/refreshToken")
     public ResponseEntity<ApiResponse<RefreshTokenRequest>> refreshToken(@RequestBody RefreshTokenRequest refreshTokenRequest) {
-        return authServiceImpl.refreshToken(refreshTokenRequest);
+        return authService.refreshToken(refreshTokenRequest);
     }
 
+    @PostMapping("/forgot")
+    public ResponseEntity<ApiResponse<String>> forgotPassword(@RequestParam String email) {
+        return authService.forgotPassword(email);
+    }
+
+    @PostMapping("/reset")
+    public ResponseEntity<ApiResponse<String>> resetPassword(@RequestParam Map<String, String> body) {
+        return  authService.resetPassword(body);
+    }
 }

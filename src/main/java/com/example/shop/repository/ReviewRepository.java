@@ -1,15 +1,14 @@
 package com.example.shop.repository;
 
-import com.example.shop.dto.ReviewDTO;
-import com.example.shop.model.ReviewBook;
+import com.example.shop.model.Review;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
 
-public interface ReviewRepository extends JpaRepository<ReviewBook, Long> {
+public interface ReviewRepository extends JpaRepository<Review, Long> {
 
-    ReviewBook findReviewById(Long id);
-    List<ReviewBook> findReviewsByBookId(Long id);
-    List<ReviewBook> findReviewByUserId(Long id);
-    boolean existsByUserIdAndBookId(Long userId, Long bookId);
+    Review findReviewById(Long id);
+    List<Review> findReviewsByProductId(Long id);
+    List<Review> findReviewByUserId(Long id);
+    boolean existsByUserIdAndProductId(Long userId, Long bookId);
 }

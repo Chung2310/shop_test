@@ -4,8 +4,7 @@ import com.example.shop.dto.OrderDTO;
 import com.example.shop.dto.request.OrderInfoRequest;
 import com.example.shop.dto.request.OrderRequest;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Order;
-import com.example.shop.service.OrderServiceImpl;
+import com.example.shop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,7 +16,7 @@ import java.util.List;
 public class OrderController {
 
     @Autowired
-    private OrderServiceImpl orderService;
+    private OrderService orderService;
 
     @GetMapping("/all")
     public ResponseEntity<ApiResponse<List<OrderDTO>>> getAllOrders() {

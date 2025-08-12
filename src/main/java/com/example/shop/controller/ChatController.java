@@ -2,10 +2,9 @@ package com.example.shop.controller;
 
 import com.example.shop.model.ApiResponse;
 import com.example.shop.model.ChatMessage;
-import com.example.shop.service.ChatServiceImpl;
+import com.example.shop.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,7 +14,7 @@ import java.util.List;
 public class ChatController {
 
     @Autowired
-    private ChatServiceImpl chatService;
+    private ChatService chatService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<String>> saveMessage(@RequestBody ChatMessage chatMessage) {
@@ -26,4 +25,5 @@ public class ChatController {
     public ResponseEntity<ApiResponse<List<ChatMessage>>> getMessagesHistory(@RequestParam Long senderId, @RequestParam Long receiverId) {
         return chatService.getMessagesHistory(senderId, receiverId);
     }
+
 }

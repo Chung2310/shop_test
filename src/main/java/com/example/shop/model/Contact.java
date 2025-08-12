@@ -3,6 +3,8 @@ package com.example.shop.model;
 import jakarta.persistence.*;
 import lombok.Data;
 
+import java.time.LocalDateTime;
+
 @Entity
 @Data
 public class Contact {
@@ -20,6 +22,26 @@ public class Contact {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_contact_id")
     private User userContact;
+
+    private String lastMessage;
+
+    private LocalDateTime lastTime;
+
+    public String getLastMessage() {
+        return lastMessage;
+    }
+
+    public void setLastMessage(String lastMessage) {
+        this.lastMessage = lastMessage;
+    }
+
+    public LocalDateTime getLastTime() {
+        return lastTime;
+    }
+
+    public void setLastTime(LocalDateTime lastTime) {
+        this.lastTime = lastTime;
+    }
 
     public Long getId() {
         return id;
