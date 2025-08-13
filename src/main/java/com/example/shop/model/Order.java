@@ -35,6 +35,8 @@ public class Order {
 
     private String description;
 
+    private Boolean received = false;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -143,5 +145,13 @@ public class Order {
 
     public void setUpdatedAt(LocalDateTime updatedAt) {
         this.updatedAt = updatedAt;
+    }
+
+    public Boolean getReceived() {
+        return received;
+    }
+
+    public void setReceived(Boolean received) {
+        this.received = received;
     }
 }

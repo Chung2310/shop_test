@@ -294,15 +294,55 @@ public class OrderService {
         );
     }
 
-    public ResponseEntity<ApiResponse<List<Order>>> getOrders(){
+    public ResponseEntity<ApiResponse<List<Order>>> getOrders() {
+        log.info("📦 [Admin] Yêu cầu lấy danh sách đơn hàng");
+
         List<Order> orders = orderRepository.findAll();
-        if(orders == null) {
+        log.debug("📊 Số đơn hàng lấy được: {}", orders != null ? orders.size() : 0);
+
+        if (orders == null) {
+            log.error("❌ Không thể truy xuất dữ liệu đơn hàng (orders=null)");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Lỗi hệ thống không thể truy xuất dữ liệu!",null)
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "Lỗi hệ thống không thể truy xuất dữ liệu!", null)
             );
         }
+
+        log.info("✅ Lấy danh sách đơn hàng thành công");
         return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Admin lấy danh sách giỏ hàng thành công!",orders)
+                new ApiResponse<>(HttpStatus.OK.value(),
+                        "Admin lấy danh sách giỏ hàng thành công!", orders)
+        );
+    }
+
+    public ResponseEntity<ApiResponse<String>> confirmOrder(Long orderId) {
+        log.info("📦 [Admin] Yêu cầu xác nhận đơn hàng với ID = {}", orderId);
+
+        if (orderId == null) {
+            log.warn("⚠️ Thiếu thông tin orderId");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "Thiếu thông tin yêu cầu!", null)
+            );
+        }
+
+        Order order = orderRepository.findOrderById(orderId);
+        if (order == null) {
+            log.warn("⚠️ Đơn hàng ID = {} không tồn tại", orderId);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
+                            "Đơn hàng không tồn tại", null)
+            );
+        }
+
+        log.info("🔄 Cập nhật trạng thái đơn hàng ID = {} → received = true", orderId);
+        order.setReceived(true);
+        saveOrUpdateOrder(order);
+
+        log.info("✅ Xác nhận đơn hàng ID = {} thành công", orderId);
+        return ResponseEntity.status(HttpStatus.OK).body(
+                new ApiResponse<>(HttpStatus.OK.value(),
+                        "Xác nhận đã nhận được đơn hàng thành công!", null)
         );
     }
 }

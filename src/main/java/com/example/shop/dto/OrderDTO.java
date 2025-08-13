@@ -1,7 +1,10 @@
 package com.example.shop.dto;
 
+import com.example.shop.model.Image;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 public class OrderDTO {
@@ -13,6 +16,7 @@ public class OrderDTO {
     private BigDecimal price;
     private Long userId;
     private String orderStatus;
+    private Boolean received;
     private String paymentMethod;
     private List<OrderDetailDTO> orderDetailDTOS;
 
@@ -94,5 +98,13 @@ public class OrderDTO {
 
     public void setPaymentMethod(String paymentMethod) {
         this.paymentMethod = paymentMethod;
+    }
+
+    public Boolean getReceived() {
+        return received;
+    }
+
+    public void setReceived(Boolean received) {
+        this.received = received;
     }
 }

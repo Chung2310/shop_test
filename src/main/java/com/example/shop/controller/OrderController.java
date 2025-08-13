@@ -42,4 +42,14 @@ public class OrderController {
     public ResponseEntity<ApiResponse<String>> updateOrderStatus(@PathVariable("orderId") Long orderId,@RequestParam String orderStatus) {
         return orderService.updateOrderStatus(orderId, orderStatus);
     }
+
+    @PostMapping("/cancel/{orderId}")
+    public ResponseEntity<ApiResponse<String>> cancelOrder(@PathVariable("orderId")  Long orderId) {
+        return orderService.cancelOrder(orderId);
+    }
+
+    @PostMapping("/confirm/{orderId}")
+    public ResponseEntity<ApiResponse<String>> confirmOrder(@PathVariable("orderId")  Long orderId) {
+        return orderService.confirmOrder(orderId);
+    }
 }

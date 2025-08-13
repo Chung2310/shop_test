@@ -1,5 +1,6 @@
 package com.example.shop.dto;
 
+import com.example.shop.model.Role;
 import lombok.Data;
 
 @Data
@@ -11,7 +12,6 @@ public class UserDTO {
     private String phone;
     private String address;
     private String avatarUrl;
-    private String role;
     private String refreshToken;
     private String backgroundUrl;
 
@@ -87,11 +87,4 @@ public class UserDTO {
         this.avatarUrl = avatarUrl;
     }
 
-    public String getRole() {
-        return role;
-    }
-
-    public void setRole(String role) {
-        this.role = role;
-    }
 }

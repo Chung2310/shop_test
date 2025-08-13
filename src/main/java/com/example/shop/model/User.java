@@ -42,7 +42,8 @@ public class User {
     private String avatarUrl;
 
     @Column(name = "role")
-    private String role = "USER";
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     @Column(name = "is_active")
     private Boolean isActive = true;
@@ -156,11 +157,11 @@ public class User {
         isDeleted = deleted;
     }
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 

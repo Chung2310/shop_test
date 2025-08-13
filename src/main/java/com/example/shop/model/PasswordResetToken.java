@@ -26,6 +26,10 @@ public class PasswordResetToken {
         this.createdAt = createdAt;
     }
 
+    public PasswordResetToken() {
+
+    }
+
     public LocalDateTime getCreatedAt() {
         return createdAt;
     }

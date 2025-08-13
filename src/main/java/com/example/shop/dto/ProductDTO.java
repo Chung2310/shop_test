@@ -5,6 +5,8 @@ import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 public class ProductDTO {
@@ -18,8 +20,8 @@ public class ProductDTO {
     private String description_book;
     private String genre;
     private String language;
-    private Image image;
     private int quantityPurchased;
+    private List<ImageDTO> images = new ArrayList<>();
 
     public int getQuantityPurchased() {
         return quantityPurchased;
@@ -109,12 +111,11 @@ public class ProductDTO {
         this.language = language;
     }
 
-    public Image getImage() {
-        return image;
+    public List<ImageDTO> getImages() {
+        return images;
     }
 
-    public void setImage(Image image) {
-        this.image = image;
+    public void setImages(List<ImageDTO> images) {
+        this.images = images;
     }
-
 }

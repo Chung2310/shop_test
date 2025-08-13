@@ -1,6 +1,7 @@
 package com.example.shop.service;
 
 import com.example.shop.model.ApiResponse;
+import com.example.shop.model.Role;
 import com.example.shop.model.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +45,7 @@ public class AdminService {
                                 "Người dùng không tồn tại!", null));
             }
 
-            user.setRole("ADMIN");
+            user.setRole(Role.ADMIN);
             userService.saveUser(user);
 
             log.info("[setRoleAdmin] Cập nhật quyền ADMIN thành công cho user ID: {}", userId);

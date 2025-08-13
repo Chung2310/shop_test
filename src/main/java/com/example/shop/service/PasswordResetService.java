@@ -75,14 +75,20 @@ public class PasswordResetService {
         );
     }
 
-    public void resetPassword(String token, String newPassword) {
+    public ResponseEntity<ApiResponse<String>> resetPassword(String token, String newPassword) {
         log.info("🔑 Bắt đầu xử lý reset password với token: {}", token);
+        PasswordResetToken prt;
+        try {
+            prt = passwordResetTokenRepository.findByToken(token)
+                    .orElseThrow(() -> new RuntimeException("Link đã bị vô hiệu do bạn đã sử dụng trước đó"));
 
-        PasswordResetToken prt = passwordResetTokenRepository.findByToken(token)
-                .orElseThrow(() -> {
-                    log.error("❌ Token không hợp lệ: {}", token);
-                    return new RuntimeException("Token không hợp lệ");
-                });
+        } catch (RuntimeException e) {
+            log.error("❌ Token không hợp lệ: {}", token);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), e.getMessage(), null)
+            );
+        }
+
 
         Date expiration = jwtTokenProvider.getExpirationDate(prt.getToken());
         log.debug("📅 Token hết hạn vào: {}", expiration);
@@ -91,7 +97,9 @@ public class PasswordResetService {
             log.warn("⚠️ Token đã hết hạn: {}", token);
             passwordResetTokenRepository.delete(prt);
             log.info("🗑️ Đã xóa token hết hạn khỏi database");
-            return;
+            return ResponseEntity.status(HttpStatus.OK).body(
+                    new ApiResponse<>(HttpStatus.OK.value(), "Token reset mật khẩu đã hết hạn!", null)
+            );
         }
 
         User user = prt.getUser();
@@ -103,5 +111,8 @@ public class PasswordResetService {
 
         passwordResetTokenRepository.delete(prt);
         log.info("🗑️ Đã xóa token sau khi reset password thành công");
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
+                new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Reset mật khẩu thành công!", null)
+        );
     }
 }

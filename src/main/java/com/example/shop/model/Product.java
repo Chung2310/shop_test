@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Data
 @Table(name = "product")
 public class Product {
     @Id
@@ -59,7 +58,7 @@ public class Product {
 
     private int quantityPurchased;
 
-    @OneToMany(mappedBy = "product", cascade =  CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true,fetch = FetchType.EAGER)
     private List<Image> images = new ArrayList<>();
 
     public int getQuantityPurchased() {

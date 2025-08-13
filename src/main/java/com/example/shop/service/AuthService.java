@@ -5,6 +5,7 @@ import com.example.shop.dto.mapper.UserMapper;
 import com.example.shop.dto.request.LoginRequest;
 import com.example.shop.dto.request.RefreshTokenRequest;
 import com.example.shop.model.ApiResponse;
+import com.example.shop.model.Role;
 import com.example.shop.model.User;
 import com.example.shop.security.JwtTokenProvider;
 import org.slf4j.Logger;
@@ -122,7 +123,11 @@ public class AuthService implements UserDetailsService {
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         log.debug("Mật khẩu đã được mã hóa cho email: {}", user.getEmail());
-
+        if (user.getRole() == Role.SELLER){
+            user.setRole(Role.SELLER);
+        } else{
+            user.setRole(Role.CUSTOMER);
+        }
         // Lưu người dùng
         User savedUser = userService.saveUser(user);
         log.info("Tạo mới người dùng thành công: ID = {}, Email = {}", savedUser.getId(), savedUser.getEmail());
@@ -190,7 +195,7 @@ public class AuthService implements UserDetailsService {
         log.info("🔑 Yêu cầu reset mật khẩu với dữ liệu: {}", body);
 
         String token = body.get("token");
-        String newPassword = body.get("newPassword");
+        String newPassword = body.get("password");
 
         if (token == null || newPassword == null) {
             log.warn("❌ Thiếu token hoặc mật khẩu mới trong resetPassword");
@@ -202,11 +207,6 @@ public class AuthService implements UserDetailsService {
         log.debug("📄 Token nhận được: {}", token);
         log.debug("🔒 Mật khẩu mới (ẩn log giá trị thực tế để bảo mật)");
 
-        passwordResetService.resetPassword(token, newPassword);
-        log.info("✅ Reset password thành công cho token: {}", token);
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Reset password thành công!", null)
-        );
+        return passwordResetService.resetPassword(token, newPassword);
     }
 }
