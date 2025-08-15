@@ -34,6 +34,12 @@ public class CartController {
     public ResponseEntity<ApiResponse<String>> updateItemToCart(@RequestBody CartItemRequest cartItemRequest) {
         return cartItemService.updateItemToCart(cartItemRequest);
     }
+
+    @PostMapping("checkout/{userId}")
+    public ResponseEntity<ApiResponse<String>> checkout(@PathVariable Long userId) {
+        return cartItemService.checkoutCart(userId);
+    }
+
     @DeleteMapping("/remove")
     public ResponseEntity<ApiResponse<String>> deleteItem(@RequestParam Long userId,@RequestParam Long bookId) {
         return cartItemService.deleteItem(userId, bookId);

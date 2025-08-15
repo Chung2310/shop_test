@@ -6,7 +6,7 @@ import lombok.Data;
 public class CartItemRequest {
     private Long bookId;
     private Long userId;
-    private int quantity = 0;
+    private int quantity ;
 
     public Long getBookId() {
         return bookId;

@@ -12,13 +12,13 @@ import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 @RequiredArgsConstructor
@@ -31,7 +31,9 @@ public class CartItemService {
     @Autowired
     private UserService userService;
     @Autowired
-    private ProductService bookService;
+    private ProductService productService;
+    @Autowired
+    private RedisTemplate<String, Integer> redisTemplate;
 
     private static final Logger logger = LoggerFactory.getLogger(CartItemService.class);
 
@@ -55,7 +57,7 @@ public class CartItemService {
             return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
         }
 
-        Product product = bookService.findBookById(cartItemRequest.getBookId());
+        Product product = productService.findBookById(cartItemRequest.getBookId());
         if(cartItemRequest.getQuantity() > product.getQuantity()){
             return ResponseHandler.generateResponse(Messages.PRODUCT_QUANTITY_NOT_ENOUGH,HttpStatus.CONFLICT,null);
         };
@@ -68,7 +70,7 @@ public class CartItemService {
 
             CartItem newCartItem = new CartItem();
             newCartItem.setUserEntity(userService.findUserById(cartItemRequest.getUserId()));
-            newCartItem.setProduct(bookService.findBookById(cartItemRequest.getBookId()));
+            newCartItem.setProduct(productService.findBookById(cartItemRequest.getBookId()));
             newCartItem.setQuantity(cartItemRequest.getQuantity());
             return newCartItem;
         });
@@ -84,26 +86,78 @@ public class CartItemService {
         return ResponseHandler.generateResponse(Messages.CART_ADD_SUCCESS,HttpStatus.OK,null);
     }
 
-    public ResponseEntity<ApiResponse<String>> updateItemToCart(CartItemRequest cartItemRequest) {
-        if (cartItemRequest.getBookId() == null || cartItemRequest.getQuantity() == 0 || cartItemRequest.getUserId() == null) {
-            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
+    public ResponseEntity<ApiResponse<String>> updateItemToCart(CartItemRequest request) {
+        if (request.getUserId() == null || request.getBookId() == null || request.getQuantity() < 0) {
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO, HttpStatus.BAD_REQUEST, null);
         }
 
-        logger.info("[updateItemToCart] Cập nhật số lượng: userId={}, bookId={}, quantity={}",
-                cartItemRequest.getUserId(), cartItemRequest.getBookId(), cartItemRequest.getQuantity());
+        logger.info("[updateItemToCart] userId={}, bookId={}, quantity={}",
+                request.getUserId(), request.getBookId(), request.getQuantity());
 
-        CartItem item = cartItemRepository.findByUserEntityIdAndProductId(
-                        cartItemRequest.getUserId(), cartItemRequest.getBookId())
-                .orElseThrow(() -> {
-                    logger.error("[updateItemToCart]  Không tìm thấy sản phẩm để cập nhật");
-                    return new RuntimeException("Không tìm thấy sản phẩm trong giỏ hàng");
-                });
+        // Cập nhật Redis
+        updateQuantityInRedis(request.getUserId(), request.getBookId(), request.getQuantity());
 
-        item.setQuantity(cartItemRequest.getQuantity());
-        cartItemRepository.save(item);
+        logger.info("[updateItemToCart] Cập nhật thành công vào Redis.");
+        return ResponseHandler.generateResponse(Messages.CART_UPDATE_QUANTITY_SUCCESS, HttpStatus.OK, null);
+    }
 
-        logger.info("[updateItemToCart]  Cập nhật số lượng thành công.");
-        return ResponseHandler.generateResponse(Messages.CART_UPDATE_QUANTITY_SUCCESS,HttpStatus.OK,null);
+    private String getKey(Long userId, Long productId) {
+        return "cart:" + userId + ":" + productId;
+    }
+
+    private void updateQuantityInRedis(Long userId, Long productId, int quantity) {
+        String key = getKey(userId, productId);
+        if (quantity <= 0) {
+            redisTemplate.delete(key);
+        } else {
+            redisTemplate.opsForValue().set(key, quantity);
+        }
+    }
+
+    public Integer getQuantity(Long userId, Long productId) {
+        return redisTemplate.opsForValue().get(getKey(userId, productId));
+    }
+
+    @Transactional
+    public ResponseEntity<ApiResponse<String>> checkoutCart(Long userId){
+        Map<Long, Integer> cart = getCartForUser(userId);
+        for (Map.Entry<Long, Integer> entry : cart.entrySet()) {
+            Long productId = entry.getKey();
+            Integer quantity = entry.getValue();
+
+            CartItem item = cartItemRepository
+                    .findByUserEntityIdAndProductId(userId, productId)
+                    .orElseGet(() -> {
+                        CartItem newItem = new CartItem();
+                        newItem.setUserEntity(userService.findUserById(userId));
+                        newItem.setProduct(productService.findBookById(productId));
+                        return newItem;
+                    });
+
+            item.setQuantity(quantity);
+            cartItemRepository.save(item);
+        }
+
+        // Xóa cache sau khi sync
+        for (Long productId : cart.keySet()) {
+            redisTemplate.delete(getKey(userId, productId));
+        }
+
+        return ResponseHandler.generateResponse("Thanh toán thành công và đồng bộ giỏ hàng.", HttpStatus.OK, null);
+    }
+
+    public Map<Long, Integer> getCartForUser(Long userId) {
+        Set<String> keys = redisTemplate.keys("cart:" + userId + ":*");
+        Map<Long, Integer> cart = new HashMap<>();
+        if (keys != null) {
+            for (String key : keys) {
+                String[] parts = key.split(":");
+                Long productId = Long.parseLong(parts[2]);
+                Integer qty = redisTemplate.opsForValue().get(key);
+                cart.put(productId, qty);
+            }
+        }
+        return cart;
     }
 
     public ResponseEntity<ApiResponse<String>> deleteItem(Long userId, Long bookId) {

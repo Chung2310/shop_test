@@ -36,7 +36,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/register", "/api/auth/refreshToken",
                                 "/api/ping",  "/avatar/**", "/background/**","/api/auth/forgot","/reset-password",
                                 "api/auth/reset").permitAll()
-                        .requestMatchers("/api/wishlist/**").permitAll()
+                        .requestMatchers("/api/cart/**").permitAll()
                         .requestMatchers("/api/product","/api/product/","/api/order/confirm/").hasRole("SELLER")
                         .requestMatchers("/api/admin/**", "/api/order/updateOrderStatus/").hasRole("ADMIN")
                         .anyRequest().authenticated()
