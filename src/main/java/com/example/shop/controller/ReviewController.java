@@ -1,7 +1,7 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.ReviewDTO;
-import com.example.shop.dto.request.ReviewRequest;
+import com.example.shop.model.review.ReviewDTO;
+import com.example.shop.model.review.ReviewRequest;
 import com.example.shop.model.ApiResponse;
 import com.example.shop.service.ReviewService;
 import org.springframework.beans.factory.annotation.Autowired;

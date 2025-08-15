@@ -1,9 +1,9 @@
 package com.example.shop.controller;
 
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Product;
-import com.example.shop.model.Order;
-import com.example.shop.model.User;
+import com.example.shop.model.product.Product;
+import com.example.shop.model.order.Order;
+import com.example.shop.model.user.UserEntity;
 import com.example.shop.service.AdminService;
 import com.example.shop.service.ProductService;
 import com.example.shop.service.OrderService;
@@ -29,7 +29,7 @@ public class AdminController {
     private OrderService orderService;
 
     @GetMapping("/users")
-    public ResponseEntity<ApiResponse<List<User>>> getAllUser() {
+    public ResponseEntity<ApiResponse<List<UserEntity>>> getAllUser() {
         return adminService.getAllUsers();
     }
 

@@ -1,8 +1,8 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.UserDTO;
-import com.example.shop.dto.request.ChangePasswordRequest;
-import com.example.shop.dto.request.UserUpdateRequest;
+import com.example.shop.model.user.UserEntityDTO;
+import com.example.shop.model.auth.ChangePasswordRequest;
+import com.example.shop.model.user.UserUpdateRequest;
 import com.example.shop.model.ApiResponse;
 import com.example.shop.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,7 +18,7 @@ public class UserController {
     private UserService userService;
 
     @PostMapping("/update")
-    public ResponseEntity<ApiResponse<UserDTO>> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
+    public ResponseEntity<ApiResponse<UserEntityDTO>> updateUser(@RequestBody UserUpdateRequest userUpdateRequest) {
         return userService.updateUser(userUpdateRequest);
     }
 

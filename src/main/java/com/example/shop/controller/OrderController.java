@@ -1,9 +1,10 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.OrderDTO;
-import com.example.shop.dto.request.OrderInfoRequest;
-import com.example.shop.dto.request.OrderRequest;
+import com.example.shop.model.order.OrderDTO;
+import com.example.shop.model.order.OrderInfoRequest;
+import com.example.shop.model.order.OrderRequest;
 import com.example.shop.model.ApiResponse;
+import com.example.shop.model.order.OrderResponse;
 import com.example.shop.service.OrderService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -19,12 +20,12 @@ public class OrderController {
     private OrderService orderService;
 
     @GetMapping("/all")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getAllOrders() {
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
         return orderService.getAllOrders();
     }
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrdersByUserId(@PathVariable("userId") Long userId) {
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrdersByUserId(@PathVariable("userId") Long userId) {
         return orderService.getOrderByUserId(userId);
     }
 

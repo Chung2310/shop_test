@@ -1,10 +1,12 @@
 package com.example.shop.service;
 
-import com.example.shop.dto.ReviewDTO;
-import com.example.shop.dto.mapper.ReviewMapper;
-import com.example.shop.dto.request.ReviewRequest;
+import com.example.shop.model.Messages;
+import com.example.shop.model.ResponseHandler;
+import com.example.shop.model.review.ReviewDTO;
+import com.example.shop.mapper.ReviewMapper;
+import com.example.shop.model.review.ReviewRequest;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Review;
+import com.example.shop.model.review.Review;
 import com.example.shop.repository.ReviewRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -54,29 +56,21 @@ public class ReviewService {
 
         if (reviewDTO == null) {
             logger.warn("ReviewDTO is null");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin để tạo đánh giá!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         if (userService.findUserById(reviewDTO.getUserDTO().getId()) == null) {
             logger.warn("User not found with id: {}", reviewDTO.getUserDTO().getId());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Người dùng không tồn tại!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.USER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         if (bookService.findBookById(reviewDTO.getProductDTO().getId()) == null) {
             logger.warn("Book not found with id: {}", reviewDTO.getProductDTO().getId());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Sách không tồn tại!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.PRODUCT_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
-        if (reviewRepository.existsByUserIdAndProductId(reviewDTO.getUserDTO().getId(), reviewDTO.getProductDTO().getId())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Người dùng đã đánh giá sản phẩm!",null)
-            );
+        if (reviewRepository.existsByUserEntityIdAndProductId(reviewDTO.getUserDTO().getId(), reviewDTO.getProductDTO().getId())) {
+            return ResponseHandler.generateResponse(Messages.PRODUCT_ALREADY_REVIEWED,HttpStatus.CONFLICT, null);
         }
         else {
             Review review = new Review();
@@ -88,9 +82,7 @@ public class ReviewService {
             Review savedReview = saveOrUpdateReview(review);
             logger.info("Review created successfully: {}", savedReview);
 
-            return ResponseEntity.status(HttpStatus.CREATED).body(
-                    new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo đánh giá thành công!", reviewMapper.toDto(savedReview))
-            );
+            return ResponseHandler.generateResponse(Messages.REVIEW_CREATED,HttpStatus.CREATED, reviewMapper.toDto(savedReview));
         }
 
 
@@ -101,26 +93,20 @@ public class ReviewService {
 
         if (reviewId == null) {
             logger.warn("ReviewId is null");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin id đánh giá!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         Review review = reviewRepository.findReviewById(reviewId);
         if (review == null) {
             logger.warn("Review not found with id: {}", reviewId);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Lỗi khi lấy thông tin", null)
-            );
+            return ResponseHandler.generateResponse(Messages.REVIEW_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         review.setDeleted(true);
         reviewRepository.save(review);
         logger.info("Review marked as deleted: {}", review);
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Xoá đánh giá thành công!", null)
-        );
+        return ResponseHandler.generateResponse(Messages.REVIEW_DELETED,HttpStatus.NO_CONTENT, null);
     }
 
     public ResponseEntity<ApiResponse<ReviewDTO>> updateReview(ReviewRequest reviewRequest) {
@@ -128,17 +114,13 @@ public class ReviewService {
 
         if (reviewRequest.getId() == null || reviewRequest.getComments() == null || reviewRequest.getRating() == 0) {
             logger.warn("Incomplete update request: {}", reviewRequest);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin yêu cầu!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         Review review = reviewRepository.findReviewById(reviewRequest.getId());
         if (review == null) {
             logger.warn("Review not found with id: {}", reviewRequest.getId());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Không tìm thấy thông tin đánh giá", null)
-            );
+            return ResponseHandler.generateResponse(Messages.REVIEW_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         review.setComments(reviewRequest.getComments());
@@ -146,9 +128,7 @@ public class ReviewService {
         reviewRepository.save(review);
         logger.info("Review updated successfully: {}", review);
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Sửa thông tin đánh giá thành công!", null)
-        );
+        return ResponseHandler.generateResponse(Messages.REVIEW_UPDATED,HttpStatus.OK, null);
     }
 
     public ResponseEntity<ApiResponse<List<ReviewDTO>>> getReviewsByBookId(Long bookId) {
@@ -156,17 +136,13 @@ public class ReviewService {
 
         if (bookId == null) {
             logger.warn("BookId is null");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin yêu cầu!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         List<Review> reviews = reviewRepository.findReviewsByProductId(bookId);
         if (reviews == null) {
             logger.warn("Review list is null for bookId: {}", bookId);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Lỗi khi lấy thông tin", null)
-            );
+            return ResponseHandler.generateResponse(Messages.REVIEW_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         List<Review> filteredReviews = new ArrayList<>();
@@ -185,9 +161,7 @@ public class ReviewService {
         List<ReviewDTO> reviewDTOs = reviewMapper.toDtoList(filteredReviews);
         logger.info("Returning {} active reviews for bookId: {}", reviewDTOs.size(), bookId);
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Lấy danh sách đánh giá của sản phẩm thành công", reviewDTOs)
-        );
+        return ResponseHandler.generateResponse(Messages.REVIEW_FETCH_SUCCESS,HttpStatus.OK, reviewDTOs);
     }
 
     public ResponseEntity<ApiResponse<List<ReviewDTO>>> getReviewsByUserId(Long userId) {
@@ -195,17 +169,13 @@ public class ReviewService {
 
         if (userId == null) {
             logger.warn("UserId is null");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin yêu cầu!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
-        List<Review> reviews = reviewRepository.findReviewByUserId(userId);
+        List<Review> reviews = reviewRepository.findReviewByUserEntityId(userId);
         if (reviews == null) {
             logger.warn("Review list is null for userId: {}", userId);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Lỗi khi lấy thông tin", null)
-            );
+            return ResponseHandler.generateResponse(Messages.REVIEW_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         List<Review> filteredReviews = new ArrayList<>();
@@ -218,51 +188,40 @@ public class ReviewService {
         List<ReviewDTO> reviewDTOs = reviewMapper.toDtoList(filteredReviews);
         logger.info("Returning {} active reviews for userId: {}", reviewDTOs.size(), userId);
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Lấy danh sách đã đánh giá của người dùng thành công", reviewDTOs)
-        );
+        return ResponseHandler.generateResponse(Messages.REVIEW_FETCH_SUCCESS,HttpStatus.OK, reviewDTOs);
     }
 
     public ResponseEntity<ApiResponse<List<Long>>> checkReviewed(Long userId, List<Long> bookIds) {
-        logger.info("📥 [checkReviewed] Bắt đầu xử lý yêu cầu kiểm tra review");
-        logger.info("➡️  Dữ liệu nhận vào: userId = {}, bookIds = {}",
+        logger.info(" [checkReviewed] Bắt đầu xử lý yêu cầu kiểm tra review");
+        logger.info("  Dữ liệu nhận vào: userId = {}, bookIds = {}",
                 userId != null ? userId : "null",
                 bookIds != null ? bookIds : "null");
 
         if (userId == null || bookIds == null) {
-            logger.warn("⚠️  Dữ liệu truyền vào bị thiếu (userId hoặc bookIds bị null)");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu dữ liệu yêu cầu", null)
-            );
+            logger.warn("  Dữ liệu truyền vào bị thiếu (userId hoặc bookIds bị null)");
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         if (bookIds.isEmpty()) {
-            logger.warn("⚠️  Danh sách bookIds rỗng");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Danh sách sách trống", null)
-            );
+            logger.warn("  Danh sách bookIds rỗng");
+            return ResponseHandler.generateResponse(Messages.REVIEW_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
-        logger.info("🔍 Tiến hành kiểm tra từng bookId chưa được đánh giá...");
+        logger.info(" Tiến hành kiểm tra từng bookId chưa được đánh giá...");
         List<Long> notReviewed = new ArrayList<>();
         for (Long bookId : bookIds) {
-            boolean exists = reviewRepository.existsByUserIdAndProductId(userId, bookId);
-            logger.debug("🔸 Book ID = {} | Đã review: {}", bookId, exists);
+            boolean exists = reviewRepository.existsByUserEntityIdAndProductId(userId, bookId);
+            logger.debug(" Book ID = {} | Đã review: {}", bookId, exists);
             if (!exists) {
                 notReviewed.add(bookId);
             }
         }
 
-        logger.info("✅ Kiểm tra hoàn tất. Tổng số sách chưa được review: {}", notReviewed.size());
-        logger.info("➡️  Dữ liệu đầu ra: bookIds = {}",
+        logger.info("Kiểm tra hoàn tất. Tổng số sách chưa được review: {}", notReviewed.size());
+        logger.info("  Dữ liệu đầu ra: bookIds = {}",
                 bookIds != null ? notReviewed : "null");
-        logger.debug("📄 Danh sách bookId chưa review: {}", notReviewed);
+        logger.debug(" Danh sách bookId chưa review: {}", notReviewed);
 
-        return ResponseEntity.ok(
-                new ApiResponse<>(HttpStatus.OK.value(), "Kiểm tra hoàn tất!", notReviewed)
-        );
+        return ResponseHandler.generateResponse(Messages.REVIEW_CHECKED,HttpStatus.OK, notReviewed);
     }
-
-
-
 }

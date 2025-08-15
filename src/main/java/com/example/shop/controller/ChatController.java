@@ -1,7 +1,7 @@
 package com.example.shop.controller;
 
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.ChatMessage;
+import com.example.shop.model.contact.ChatMessage;
 import com.example.shop.service.ChatService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

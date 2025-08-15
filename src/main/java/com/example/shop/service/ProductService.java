@@ -1,10 +1,13 @@
 package com.example.shop.service;
 
-import com.example.shop.dto.ProductDTO;
+import com.example.shop.model.product.ProductDTO;
 
-import com.example.shop.dto.mapper.ProductMapper;
-import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Product;
+import com.example.shop.mapper.ProductMapper;
+import com.example.shop.model.*;
+import com.example.shop.model.product.Product;
+import com.example.shop.model.product.ProductRequest;
+import com.example.shop.model.product.ProductResponse;
+import com.example.shop.model.user.UserEntity;
 import com.example.shop.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
@@ -17,6 +20,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +37,9 @@ public class ProductService {
     @Autowired
     private ProductMapper productMapper;
 
+    @Autowired
+    private UserService userService;
+
     public Product findBookById(Long id) {
         if(id == null){
             return null;
@@ -40,110 +47,127 @@ public class ProductService {
         return productRepository.findById(id).orElse(null);
     }
 
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> getAllBooks(int page, int size) {
-        logger.info("[getAllBooks] Đang lấy toàn bộ danh sách sách");
+    public Product createOrUpdateProduct(String mode,ProductRequest productRequest){
+        if ((productRequest.getId() == 0)
+                || (productRequest.getSellerId() == 0)
+                || (productRequest.getTitle() == null)
+                || (productRequest.getAuthor() == null)
+                || (productRequest.getPublishedDate() == null)
+                || (productRequest.getPrice().compareTo(BigDecimal.ZERO) == 0)
+                || (productRequest.getQuantity() == 0)
+                || (productRequest.getGenre() == null)
+                || (productRequest.getLanguage() == null)
+                || (productRequest.getDescription() == null)
+                || (productRequest.getImages() == null)) {
+            return null;
+        }
+        UserEntity userEntity = userService.findUserById(productRequest.getSellerId());
+        if (userEntity == null){
+            return null;
+        }
+
+        Product product = productMapper.toProductEntity(productRequest);
+        product.setSeller(userEntity);
+        if(mode.equals("CREATE")){
+            product.setCreatedDate(LocalDateTime.now());
+        }
+        else {
+            product.setUpdatedDate(LocalDateTime.now());
+        }
+        Product savedProduct = productRepository.save(product);
+        return savedProduct;
+    }
+
+    public Product createOrUpdateProductDTO(Product product){
+        return productRepository.save(product);
+    }
+
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getAllProducts(int page, int size) {
+        logger.info("[getAllProducts] Đang lấy toàn bộ danh sách sản phẩm");
 
         Pageable pageable = PageRequest.of(page, size);
         Page<Product> booksPage = productRepository.findByIsDeletedFalse(pageable);
 
 
-        List<ProductDTO> productDTOS = productMapper.toDtoList(booksPage.getContent());
+        List<ProductResponse> productResponseList = productMapper.toProductResponseList(booksPage.getContent());
 
-        logger.debug("[getAllBooks] Số lượng sách lấy được: {}", productDTOS.size());
+        logger.debug("[getAllProducts] Số lượng sản phẩm lấy được: {}", productResponseList.size());
 
-        return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), "Lấy dữ liệu thành công!", productDTOS));
+        return ResponseHandler.generateResponse(Messages.DATA_FETCH_SUCCESS, HttpStatus.OK, productResponseList);
     }
 
 
-    public ResponseEntity<ApiResponse<List<ProductDTO>>> getBookByTitle(String title) {
-        logger.info("[getBookByTitle] Tìm sách với tiêu đề chứa: '{}'", title);
+    public ResponseEntity<ApiResponse<List<ProductResponse>>> getProductByTitle(String title) {
+        logger.info("[getProductByTitle] Tìm sản phẩm với tiêu đề chứa: '{}'", title);
 
         if(title == null)
         {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "Title trống!",null));
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO, HttpStatus.BAD_REQUEST, null);
         }
 
         List<Product> products = productRepository.findByTitleContainingIgnoreCase(title);
-        List<ProductDTO> productDTOList =  productMapper.toDtoList(products);
-        logger.debug("[getBookByTitle] Số sách tìm thấy: {}", products.size());
+        List<ProductResponse> productResponseList =  productMapper.toProductResponseList(products);
+        logger.debug("[getProductByTitle] Số sản phẩm tìm thấy: {}", products.size());
 
-        return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), "Lấy dữ liệu theo title thành công!", productDTOList));
+        return ResponseHandler.generateResponse(Messages.DATA_FETCH_SUCCESS, HttpStatus.OK, productResponseList);
     }
 
 
-    public ResponseEntity<ApiResponse<ProductDTO>> getBookById(Long id) {
-        logger.info("[getBookById] Tìm sách theo ID: {}", id);
+    public ResponseEntity<ApiResponse<ProductResponse>> getProductById(Long id) {
+        logger.info("[getProductById] Tìm sản phẩm theo ID: {}", id);
         if(id == null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "id trống!",null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO, HttpStatus.BAD_REQUEST, null);
         }
 
         Optional<Product> book = productRepository.findById(id);
         if (book.isPresent()) {
-            logger.debug("[getBookById] Đã tìm thấy sách: {}", book.get());
-            ProductDTO productDTO = productMapper.toDto(book.get());
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), "Lấy dữ liệu theo id thành công!", productDTO));
+            logger.debug("[getProductById] Đã tìm thấy sản phẩm: {}", book.get());
+            ProductResponse productResponse = productMapper.toProductResponse(book.get());
+            return ResponseHandler.generateResponse(Messages.DATA_FETCH_SUCCESS,HttpStatus.OK,productResponse);
         } else {
-            logger.warn("[getBookById] Không tìm thấy sách với ID: {}", id);
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.NO_CONTENT.value(), "Không tìm thấy sách", null));
+            logger.warn("[getProductById] Không tìm thấy sản phẩm với ID: {}", id);
+            return ResponseHandler.generateResponse(Messages.PRODUCT_NOT_FOUND,HttpStatus.NOT_FOUND,null);
+        }
+    }
+
+    public ResponseEntity<ApiResponse<String>> createProduct(ProductRequest productRequest) {
+        logger.info("[createProduct] Tạo sản phẩm mới: {}", productRequest);
+        if(productRequest == null){
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
+        }
+
+        Product product = createOrUpdateProduct("CREATE", productRequest);
+
+        if (product != null) {
+            logger.debug("[createProduct] Đã tạo sản phẩm thành công với ID: {}", product.getId());
+            return ResponseHandler.generateResponse(Messages.PRODUCT_CREATED,HttpStatus.CREATED,null);
+        } else {
+            logger.error("[createProduct] Tạo sản phẩm thất bại");
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR,null);
         }
     }
 
     //admin
-    public ResponseEntity<ApiResponse<ProductDTO>> createBook(ProductDTO productDTO) {
-        logger.info("[createBook] Tạo sách mới: {}", productDTO);
-        if(productDTO == null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "Thông tin sách bị trống!",null)
-            );
-        }
+    public ResponseEntity<ApiResponse<String>> updateProduct(ProductRequest productRequest) {
+        Long id = productRequest.getId();
+        logger.info("[updateProduct] Cập nhật sản phẩm: {}", productRequest.getId());
 
-        Product product = productMapper.toEntity(productDTO);
-        product.setCreatedDate(LocalDateTime.now());
-        Product savedProduct = productRepository.save(product);
-        if (savedProduct.getId() != null) {
-            logger.debug("[createBook] Đã tạo sách thành công với ID: {}", savedProduct.getId());
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), "Tạo thành công", savedProduct));
+        Product product = createOrUpdateProduct("UPDATE", productRequest);
+
+        if (product != null) {
+            logger.debug("[updateProduct] Cập nhật sản phẩm thành công");
+            return ResponseHandler.generateResponse(Messages.PRODUCT_UPDATED,HttpStatus.OK,null);
         } else {
-            logger.error("[createBook] Tạo sách thất bại");
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Tạo không thành công", null));
+            logger.warn("[updateProduct] Không tìm thấy sản phẩm với ID: {}", id);
+            return ResponseHandler.generateResponse(Messages.PRODUCT_NOT_FOUND,HttpStatus.NOT_FOUND,null);
         }
     }
 
     //admin
-    public ResponseEntity<ApiResponse<String>> updateBook(Product product) {
-        logger.info("[updateBook] Cập nhật sách: {}", product);
-        if(product == null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "Thông tin cập nhập sách trống!",null)
-            );
-        }
-
-        Optional<Product> findedBook = productRepository.findById(product.getId());
-        if (findedBook.isPresent()) {
-            product.setUpdatedDate(LocalDateTime.now());
-            productRepository.save(product);
-            logger.debug("[updateBook] Cập nhật sách thành công");
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), "Cập nhật thành công", product));
-        } else {
-            logger.warn("[updateBook] Không tìm thấy sách với ID: {}", product.getId());
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.NO_CONTENT.value(), "Không tìm thấy dữ liệu sách", null));
-        }
-    }
-
-    //admin
-    public ResponseEntity<ApiResponse<String>> deleteBook(Long id) {
-        logger.info("[deleteBook] Xoá mềm sách với ID: {}", id);
+    public ResponseEntity<ApiResponse<String>> deleteProduct(Long id) {
+        logger.info("[deleteProduct] Xoá mềm sản phẩm với ID: {}", id);
         if(id ==null){
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "id sách trống!",null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
         }
 
         Optional<Product> optionalBook = productRepository.findById(id);
@@ -151,22 +175,30 @@ public class ProductService {
             Product product = optionalBook.get();
             product.setDeleted(true);
             productRepository.save(product);
-            logger.debug("[deleteBook] Đã xoá mềm sách thành công");
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.OK.value(), "Xoá thành công!", null));
+            logger.debug("[deleteProduct] Đã xoá mềm sản phẩm thành công");
+            return ResponseHandler.generateResponse(Messages.PRODUCT_DELETED,HttpStatus.OK,null);
         } else {
-            logger.warn("[deleteBook] Không tìm thấy sách để xoá với ID: {}", id);
-            return ResponseEntity.ok(new ApiResponse(HttpStatus.NO_CONTENT.value(), "Không tìm thấy sách", null));
+            logger.warn("[deleteProduct] Không tìm thấy sản phẩm để xoá với ID: {}", id);
+            return ResponseHandler.generateResponse(Messages.PRODUCT_NOT_FOUND,HttpStatus.NOT_FOUND,null);
         }
     }
 
-    public ResponseEntity<ApiResponse<List<Product>>> getBooksAdmin(){
+    public ResponseEntity<ApiResponse<List<Product>>> getBooksAdmin() {
+        logger.info(" Admin yêu cầu lấy danh sách sản phẩm");
+
         List<Product> products = productRepository.findAll();
-        if(products == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Lỗi hệ thống không thể truy xuất dữ liệu!",null)
-            );
+
+        if (products == null) {
+            logger.error(" Không thể truy xuất dữ liệu sản phẩm từ database");
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR,null);
         }
-        return ResponseEntity.status(HttpStatus.OK)
-                .body(new ApiResponse<>(HttpStatus.OK.value(),"Admin lấy thông tin sản phẩm thành công!", products));
+
+        if (products.isEmpty()) {
+            logger.warn("️ Danh sách sản phẩm trả về rỗng");
+        } else {
+            logger.info(" Lấy danh sách sản phẩm thành công. Số lượng: {}", products.size());
+        }
+
+        return ResponseHandler.generateResponse(Messages.DATA_FETCH_SUCCESS,HttpStatus.OK,products);
     }
 }

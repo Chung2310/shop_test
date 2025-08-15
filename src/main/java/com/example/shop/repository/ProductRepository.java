@@ -1,6 +1,6 @@
 package com.example.shop.repository;
 
-import com.example.shop.model.Product;
+import com.example.shop.model.product.Product;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;

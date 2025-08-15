@@ -1,7 +1,8 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.CartItemDTO;
-import com.example.shop.dto.request.CartItemRequest;
+import com.example.shop.model.cart.CartItemDTO;
+import com.example.shop.model.cart.CartResponse;
+import com.example.shop.model.cart.CartItemRequest;
 import com.example.shop.model.ApiResponse;
 import com.example.shop.service.CartItemService;
 import lombok.RequiredArgsConstructor;
@@ -20,17 +21,17 @@ public class CartController {
     private CartItemService cartItemService;
 
     @GetMapping("/{userId}")
-    public ResponseEntity<ApiResponse<List<CartItemDTO>>> getAllCartItemsByUserId(@PathVariable Long userId) {
+    public ResponseEntity<ApiResponse<List<CartResponse>>> getAllCartItemsByUserId(@PathVariable Long userId) {
         return cartItemService.getAllCartItems(userId);
     }
 
     @PostMapping("/add")
-    public ResponseEntity<ApiResponse<CartItemDTO>> addItemToCart(@RequestBody CartItemRequest cartItemRequest) {
+    public ResponseEntity<ApiResponse<String>> addItemToCart(@RequestBody CartItemRequest cartItemRequest) {
         return cartItemService.addItemToCart(cartItemRequest);
     }
 
     @PutMapping("/update")
-    public ResponseEntity<ApiResponse<CartItemDTO>> updateItemToCart(@RequestBody CartItemRequest cartItemRequest) {
+    public ResponseEntity<ApiResponse<String>> updateItemToCart(@RequestBody CartItemRequest cartItemRequest) {
         return cartItemService.updateItemToCart(cartItemRequest);
     }
     @DeleteMapping("/remove")

@@ -1,10 +1,10 @@
 package com.example.shop.service;
 
-import com.example.shop.dto.OrderDTO;
-import com.example.shop.dto.mapper.OrderMapper;
-import com.example.shop.dto.request.OrderInfoRequest;
-import com.example.shop.dto.request.OrderRequest;
+import com.example.shop.model.order.*;
+import com.example.shop.mapper.OrderMapper;
 import com.example.shop.model.*;
+import com.example.shop.model.product.Product;
+import com.example.shop.model.user.UserEntity;
 import com.example.shop.repository.OrderRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,22 +45,18 @@ public class OrderService {
         log.info("[createOrder] Bắt đầu tạo đơn hàng...");
         if (orderRequest == null) {
             log.warn("[createOrder] Dữ liệu đơn hàng null!");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Dữ liệu đơn hàng không hợp lệ!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.INVALID_INPUT,HttpStatus.BAD_REQUEST, null);
         }
 
         if (orderRequest.getUserId() == null ) {
             log.warn("[createOrder] Người dùng không hợp lệ: user.id == null");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Người dùng không hợp lệ!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
-        User user = userService.findUserById(orderRequest.getUserId());
+        UserEntity userEntity = userService.findUserById(orderRequest.getUserId());
 
         Order order = new Order();
-        order.setUser(user);
+        order.setUserEntity(userEntity);
         order.setDescription(orderRequest.getDescription());
         order.setAddress(orderRequest.getAddress());
         order.setPhone(orderRequest.getPhone());
@@ -79,14 +75,14 @@ public class OrderService {
 
             product.setQuantityPurchased(product.getQuantityPurchased()+ item.getQuantity());
             product.setQuantity(product.getQuantity()-item.getQuantity());
-            bookService.updateBook(product);
+            bookService.createOrUpdateProductDTO(product);
 
             total += product.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())).doubleValue();
 
             detailList.add(orderDetail);
         }
 
-        cartItemService.deleteAllCartItems(user.getId());
+        cartItemService.deleteAllCartItems(userEntity.getId());
 
         order.setPrice(BigDecimal.valueOf(total));
         order.setOrderDetails(detailList);
@@ -95,69 +91,55 @@ public class OrderService {
         Order savedOrder = saveOrUpdateOrder(order);
         log.info("[createOrder] Đã lưu đơn hàng thành công. OrderId = {}", savedOrder.getId());
 
-        String toEmail = user.getEmail();
+        String toEmail = userEntity.getEmail();
         String subject = "Xác nhận đơn hàng #" + savedOrder.getId();
-        String body = "Xin chào " + user.getFullName() + ",\n\n" +
+        String body = "Xin chào " + userEntity.getFullName() + ",\n\n" +
                 "Cảm ơn bạn đã đặt hàng tại cửa hàng của chúng tôi.\n" +
                 "Mã đơn hàng: " + savedOrder.getId() + "\n" +
                 "Trạng thái: " + savedOrder.getOrderStatus() + "\n" +
                 "Tổng tiền: " + savedOrder.getPrice() + " VND\n\n" +
                 "Trân trọng,\nCửa hàng";
 
-        emailService.sendOrderConfirmationEmail(toEmail, subject, body);
+        emailService.sendEmail(toEmail, subject, body);
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo đơn hàng thành công!",  null)
-        );
+        return ResponseHandler.generateResponse(Messages.ORDER_CREATED,HttpStatus.CREATED, null);
     }
 
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getOrderByUserId(Long userId) {
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getOrderByUserId(Long userId) {
         log.info("[getOrderByUserId] Bắt đầu lấy đơn hàng theo userId = {}", userId);
         try {
-            User user = userService.findUserById(userId);
-            if (user == null) {
+            UserEntity userEntity = userService.findUserById(userId);
+            if (userEntity == null) {
                 log.warn("[getOrderByUserId] Không tìm thấy userId = {}", userId);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ApiResponse<>(HttpStatus.NOT_FOUND.value(),
-                                "Không tìm thấy người dùng có userId = " + userId, null)
-                );
+                return ResponseHandler.generateResponse(Messages.USER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
             }
 
             log.info("[getOrderByUserId] Tìm thấy userId = {}. Tiến hành truy vấn đơn hàng.", userId);
-            List<Order> ordersList = orderRepository.findOrderByUserId(userId);
+            List<Order> ordersList = orderRepository.findOrderByUserEntityId(userId);
             log.info("[getOrderByUserId] Truy vấn thành công. Số đơn hàng: {}", ordersList.size());
 
-            List<OrderDTO> orderDTOList = orderMapper.toDtoList(ordersList);
+            List<OrderResponse> orderResponseList = orderMapper.toOrderResponseList(ordersList);
 
-            return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(),
-                            "Lấy danh sách đơn hàng thành công!",orderDTOList)
-            );
+            return ResponseHandler.generateResponse(Messages.ORDER_FETCH_SUCCESS,HttpStatus.OK, orderResponseList);
 
         } catch (RuntimeException e) {
             log.error("[getOrderByUserId] Lỗi hệ thống khi truy vấn đơn hàng: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đã xảy ra lỗi server", null)
-            );
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
     }
 
-    public ResponseEntity<ApiResponse<List<OrderDTO>>> getAllOrders() {
+    public ResponseEntity<ApiResponse<List<OrderResponse>>> getAllOrders() {
         log.info("[getAllOrders] Bắt đầu lấy tất cả đơn hàng...");
         try {
             List<Order> ordersList = orderRepository.findAll();
             log.info("[getAllOrders] Thành công. Tổng số đơn hàng: {}", ordersList.size());
 
-            List<OrderDTO> orderDTOList = orderMapper.toDtoList(ordersList);
+            List<OrderResponse> orderResponseList = orderMapper.toOrderResponseList(ordersList);
 
-            return ResponseEntity.ok(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Lấy tất cả đơn hàng thành công!", orderDTOList)
-            );
+            return ResponseHandler.generateResponse(Messages.ORDER_FETCH_SUCCESS,HttpStatus.OK, orderResponseList);
         } catch (RuntimeException e) {
             log.error("[getAllOrders] Lỗi hệ thống khi lấy danh sách đơn hàng: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Đã xảy ra lỗi server", null)
-            );
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
     }
 
@@ -180,13 +162,11 @@ public class OrderService {
 
         Order order = orderRepository.findOrderById(orderInfoRequest.getOrderId());
 
-        User user = order.getUser();
+        UserEntity userEntity = order.getUserEntity();
 
         if (order == null) {
             log.warn("Không tìm thấy đơn hàng với ID: {}", orderInfoRequest.getOrderId());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Đơn hàng không hợp lệ!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.ORDER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         log.info("Tìm thấy đơn hàng ID: {}. Tiến hành cập nhật...", order.getId());
@@ -208,9 +188,9 @@ public class OrderService {
         order.setUpdatedAt(LocalDateTime.now());
         saveOrUpdateOrder(order);
 
-        String toEmail = user.getEmail();
+        String toEmail = userEntity.getEmail();
         String subject = "Cập nhập đơn hàng #" + order.getId();
-        String body = "Xin chào " + user.getFullName() + ",\n\n" +
+        String body = "Xin chào " + userEntity.getFullName() + ",\n\n" +
                 "Bạn đã đổi thông tin đơn hàng thành công!,\n" +
                 "Mã đơn hàng: " + order.getId() + "\n" +
                 "Địa chị nhận hàng: " + order.getAddress() + "\n" +
@@ -218,13 +198,11 @@ public class OrderService {
                 "Chú thích: " + order.getDescription() + "\n" +
                 "Trân trọng,\nCửa hàng";
 
-        emailService.sendOrderConfirmationEmail(toEmail, subject, body);
+        emailService.sendEmail(toEmail, subject, body);
 
         log.info("Cập nhật đơn hàng ID {} thành công.", order.getId());
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Cập nhật đơn hàng thành công!", null)
-        );
+        return ResponseHandler.generateResponse(Messages.ORDER_UPDATED,HttpStatus.NO_CONTENT, null);
     }
 
     //Admin
@@ -235,9 +213,7 @@ public class OrderService {
 
         if (order == null) {
             log.warn("Không tìm thấy đơn hàng với ID: {}", orderId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Đơn hàng không hợp lệ!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.ORDER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         log.debug("Trạng thái đơn hàng cũ: {}", order.getOrderStatus());
@@ -246,10 +222,7 @@ public class OrderService {
         saveOrUpdateOrder(order);
 
         log.info("Cập nhật trạng thái đơn hàng ID {} thành công: trạng thái mới = {}", orderId, orderStatus);
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Cập nhật trạng thái đơn hàng thành công!", null)
-        );
+        return ResponseHandler.generateResponse(Messages.ORDER_UPDATED,HttpStatus.OK, null);
     }
 
     public ResponseEntity<ApiResponse<String>> cancelOrder(Long orderId) {
@@ -257,20 +230,16 @@ public class OrderService {
 
         Order order = orderRepository.findOrderById(orderId);
 
-        User user = order.getUser();
+        UserEntity userEntity = order.getUserEntity();
 
         if (order == null) {
             log.warn("Không tìm thấy đơn hàng với ID: {}", orderId);
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Đơn hàng không hợp lệ!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.ORDER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         if (order.isCanceled()) {
             log.warn("Đơn hàng ID {} đã bị huỷ trước đó.", orderId);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Đơn hàng đã bị huỷ trước đó!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.ORDER_ALREADY_CANCELLED,HttpStatus.CONFLICT, null);
         }
 
         order.setCanceled(true);
@@ -278,71 +247,55 @@ public class OrderService {
 
         saveOrUpdateOrder(order);
 
-        String toEmail = user.getEmail();
+        String toEmail = userEntity.getEmail();
         String subject = "Huỷ đơn hàng #" + order.getId();
-        String body = "Xin chào " + user.getFullName() + ",\n\n" +
+        String body = "Xin chào " + userEntity.getFullName() + ",\n\n" +
                 "Bạn đã xác nhận huỷ đơn hàng.\n" +
                 "Mã đơn hàng: " + order.getId() + "\n" +
                 "Thời gian huỷ: " + order.getUpdatedAt() + "\n" +
                 "Trân trọng,\nCửa hàng";
 
-        emailService.sendOrderConfirmationEmail(toEmail, subject, body);
+        emailService.sendEmail(toEmail, subject, body);
         log.info("Đơn hàng ID {} đã được huỷ thành công.", orderId);
 
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Huỷ đơn hàng thành công!", null)
-        );
+        return ResponseHandler.generateResponse(Messages.ORDER_CANCEL_SUCCESS,HttpStatus.NO_CONTENT, null);
+
     }
 
     public ResponseEntity<ApiResponse<List<Order>>> getOrders() {
-        log.info("📦 [Admin] Yêu cầu lấy danh sách đơn hàng");
+        log.info(" [Admin] Yêu cầu lấy danh sách đơn hàng");
 
         List<Order> orders = orderRepository.findAll();
-        log.debug("📊 Số đơn hàng lấy được: {}", orders != null ? orders.size() : 0);
+        log.debug(" Số đơn hàng lấy được: {}", orders != null ? orders.size() : 0);
 
         if (orders == null) {
-            log.error("❌ Không thể truy xuất dữ liệu đơn hàng (orders=null)");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "Lỗi hệ thống không thể truy xuất dữ liệu!", null)
-            );
+            log.error(" Không thể truy xuất dữ liệu đơn hàng (orders=null)");
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
 
-        log.info("✅ Lấy danh sách đơn hàng thành công");
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(),
-                        "Admin lấy danh sách giỏ hàng thành công!", orders)
-        );
+        log.info(" Lấy danh sách đơn hàng thành công");
+        return ResponseHandler.generateResponse(Messages.ORDER_FETCH_SUCCESS,HttpStatus.OK, orders);
     }
 
     public ResponseEntity<ApiResponse<String>> confirmOrder(Long orderId) {
-        log.info("📦 [Admin] Yêu cầu xác nhận đơn hàng với ID = {}", orderId);
+        log.info(" [Admin] Yêu cầu xác nhận đơn hàng với ID = {}", orderId);
 
         if (orderId == null) {
-            log.warn("⚠️ Thiếu thông tin orderId");
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "Thiếu thông tin yêu cầu!", null)
-            );
+            log.warn("️ Thiếu thông tin orderId");
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         Order order = orderRepository.findOrderById(orderId);
         if (order == null) {
-            log.warn("⚠️ Đơn hàng ID = {} không tồn tại", orderId);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(),
-                            "Đơn hàng không tồn tại", null)
-            );
+            log.warn("️ Đơn hàng ID = {} không tồn tại", orderId);
+            return ResponseHandler.generateResponse(Messages.ORDER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
-        log.info("🔄 Cập nhật trạng thái đơn hàng ID = {} → received = true", orderId);
+        log.info(" Cập nhật trạng thái đơn hàng ID = {} → received = true", orderId);
         order.setReceived(true);
         saveOrUpdateOrder(order);
 
-        log.info("✅ Xác nhận đơn hàng ID = {} thành công", orderId);
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(),
-                        "Xác nhận đã nhận được đơn hàng thành công!", null)
-        );
+        log.info(" Xác nhận đơn hàng ID = {} thành công", orderId);
+        return ResponseHandler.generateResponse(Messages.ORDER_CONFIRMED,HttpStatus.CONFLICT, null);
     }
 }

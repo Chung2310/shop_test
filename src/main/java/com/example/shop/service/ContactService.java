@@ -1,15 +1,20 @@
 package com.example.shop.service;
 
-import com.example.shop.dto.ContactDTO;
-import com.example.shop.dto.mapper.ContactMapper;
+import com.example.shop.model.Messages;
+import com.example.shop.model.ResponseHandler;
+import com.example.shop.model.contact.ContactDTO;
+import com.example.shop.mapper.ContactMapper;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Contact;
+import com.example.shop.model.contact.Contact;
+import com.example.shop.model.contact.ContactRequest;
+import com.example.shop.model.contact.ContactResponse;
 import com.example.shop.repository.ContactRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -20,55 +25,40 @@ public class ContactService {
     @Autowired
     private ContactMapper contactMapper;
 
-    public ResponseEntity<ApiResponse<String>> createContact(ContactDTO contactDTO) {
-        if(contactDTO == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin yêu cầu!",null)
-            );
+    public ResponseEntity<ApiResponse<String>> createContact(ContactRequest contactRequest) {
+        if(contactRequest == null) {
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
         }
 
-        Contact contact =  contactRepository.save(contactMapper.toEntity(contactDTO));
+        Contact contact = contactMapper.toContact(contactRequest);
+        contact.setLastTime(LocalDateTime.now());
+        contactRepository.save(contact);
 
         if(contact == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.PROCESSING.value(), "Lỗi hệ thống! Không thể lưu liên hệ!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR,null);
         }
-        return ResponseEntity.status(HttpStatus.CREATED).body(
-                new ApiResponse<>(HttpStatus.CREATED.value(), "Tạo liên hệ thành công!",null)
-        );
+        return ResponseHandler.generateResponse(Messages.CONTACT_CREATED_SUCCESS,HttpStatus.CREATED,null);
     }
 
-    public ResponseEntity<ApiResponse<List<ContactDTO>>> getListContractDTO(Long userId) {
+    public ResponseEntity<ApiResponse<List<ContactResponse>>> getListContractDTO(Long userId) {
         if(userId == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin yêu cầu",null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
         }
 
-        List<Contact> contacts = contactRepository.findContactsByUserId(userId);
+        List<Contact> contacts = contactRepository.findContactsByUserEntityId(userId);
 
         if(contacts.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Lỗi hệ thống! Không thể lấy dữ liệu!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR,null);
         }
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Lấy dữ liệu liên hệ thành công!", contactMapper.toContactDTOs(contacts))
-        );
+        return ResponseHandler.generateResponse(Messages.CHAT_HISTORY_FETCH_SUCCESS,HttpStatus.OK,contactMapper.toContactResponseList(contacts));
     }
 
     public ResponseEntity<ApiResponse<String>> deleteContact(Long userId, Long userContactId) {
         if (userId == null || userContactId == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Thiếu thông tin yêu cầu!",null)
-            );
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST,null);
         }
 
-        contactRepository.deleteByUserIdAndUserContactId(userId, userContactId);
-
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Xoá liên hệ thành công!", null)
-        );
+        contactRepository.deleteByUserEntityIdAndUserEntityContactId(userId, userContactId);
+        return ResponseHandler.generateResponse(Messages.CONTACT_DELETED_SUCCESS,HttpStatus.OK,null);
     }
 }

@@ -1,6 +1,6 @@
 package com.example.shop.security;
 
-import com.example.shop.model.User;
+import com.example.shop.model.user.UserEntity;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.security.core.GrantedAuthority;
@@ -28,22 +28,22 @@ public class JwtTokenProvider {
         this.BASE64_SECRET_KEY = Base64.getEncoder().encodeToString(SECRET.getBytes());
     }
 
-    public String generateAccessToken(User user) {
+    public String generateAccessToken(UserEntity userEntity) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", List.of(user.getRole()));
+        claims.put("roles", List.of(userEntity.getRole()));
 
         return Jwts.builder()
                 .setClaims(claims)
-                .setSubject(user.getEmail())
+                .setSubject(userEntity.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + ACCESS_TOKEN_VALIDITY))
                 .signWith(SECRET_KEY, SignatureAlgorithm.HS512)
                 .compact();
     }
 
-    public String generateRefreshToken(User user) {
+    public String generateRefreshToken(UserEntity userEntity) {
         return Jwts.builder()
-                .setSubject(user.getEmail())
+                .setSubject(userEntity.getEmail())
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + REFRESH_TOKEN_VALIDITY))
                 .signWith(SECRET_KEY, SignatureAlgorithm.HS512)

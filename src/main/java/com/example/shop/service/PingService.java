@@ -1,6 +1,8 @@
 package com.example.shop.service;
 
 import com.example.shop.model.ApiResponse;
+import com.example.shop.model.Messages;
+import com.example.shop.model.ResponseHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -14,7 +16,6 @@ public class PingService {
 
     public ResponseEntity<ApiResponse<String>> ping() {
         logger.log(Level.INFO, "ping đến server");
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Kết nốt đến server",null));
+        return ResponseHandler.generateResponse(Messages.CONNECT_SERVER_SUCCESS,HttpStatus.OK, null);
     }
 }

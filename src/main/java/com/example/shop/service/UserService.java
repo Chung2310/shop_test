@@ -1,11 +1,13 @@
 package com.example.shop.service;
 
-import com.example.shop.dto.UserDTO;
-import com.example.shop.dto.mapper.UserMapper;
-import com.example.shop.dto.request.ChangePasswordRequest;
-import com.example.shop.dto.request.UserUpdateRequest;
+import com.example.shop.model.Messages;
+import com.example.shop.model.ResponseHandler;
+import com.example.shop.model.user.UserEntityDTO;
+import com.example.shop.mapper.UserMapper;
+import com.example.shop.model.auth.ChangePasswordRequest;
+import com.example.shop.model.user.UserUpdateRequest;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.User;
+import com.example.shop.model.user.UserEntity;
 import com.example.shop.repository.UserRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,82 +41,72 @@ public class UserService {
     private final Logger log = LoggerFactory.getLogger(this.getClass());
 
     //admin
-    public List<User> getAllUsers(){
+    public List<UserEntity> getAllUsers(){
         log.info("[getAllUsers] Lấy toàn bộ thông tin user");
         return userRepository.findAll();
     }
 
-    public User findUserById(Long userId) {
+    public UserEntity findUserById(Long userId) {
         log.info("[findUserById] Tìm người dùng với ID: {}", userId);
         return userRepository.findById(userId).orElse(null);
     }
 
-    public User findUserByUsername(String username) {
+    public UserEntity findUserByUsername(String username) {
         log.info("[findUserByUsername] Tìm người dùng với username: {}", username);
         return userRepository.findUserByFullNameContainingIgnoreCase(username);
     }
 
-    public User findUserByEmail(String email) {
+    public UserEntity findUserByEmail(String email) {
         log.info("[findUserByEmail] Tìm người dùng với email: {}", email);
         return userRepository.findUserByEmail(email);
     }
 
-    public User saveUser(User user) {
-        log.info("[saveUser] Lưu người dùng với email: {}", user.getEmail());
-        return userRepository.save(user);
+    public UserEntity saveUser(UserEntity userEntity) {
+        log.info("[saveUser] Lưu người dùng với email: {}", userEntity.getEmail());
+        return userRepository.save(userEntity);
     }
 
 
-    public ResponseEntity<ApiResponse<UserDTO>> updateUser(UserUpdateRequest request) {
+    public ResponseEntity<ApiResponse<UserEntityDTO>> updateUser(UserUpdateRequest request) {
         log.info("[updateUser] Bắt đầu cập nhật người dùng ID: {}", request.getId());
 
-        Optional<User> userOpt = userRepository.findById(request.getId());
+        Optional<UserEntity> userOpt = userRepository.findById(request.getId());
         if (!userOpt.isPresent()) {
             log.warn("[updateUser] Người dùng không tồn tại: {}", request.getId());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Tài khoản không tồn tại!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.USER_NOT_FOUND,HttpStatus.OK, null);
         }
 
-        User user = userOpt.get();
-        user.setFullName(request.getFullName());
-        user.setAddress(request.getAddress());
-        user.setPhone(request.getPhone());
+        UserEntity userEntity = userOpt.get();
+        userEntity.setFullName(request.getFullName());
+        userEntity.setAddress(request.getAddress());
+        userEntity.setPhone(request.getPhone());
 
-        userRepository.save(user);
-        log.info("[updateUser] Cập nhật thông tin thành công cho user ID: {}", user.getId());
+        userRepository.save(userEntity);
+        log.info("[updateUser] Cập nhật thông tin thành công cho user ID: {}", userEntity.getId());
 
-        UserDTO userDTO = userMapper.toDto(user);
-        return ResponseEntity.status(HttpStatus.OK).body(
-                new ApiResponse<>(HttpStatus.OK.value(), "Update thông tin người dùng thành công!", userDTO)
-        );
+        UserEntityDTO userEntityDTO = userMapper.toDto(userEntity);
+        return ResponseHandler.generateResponse(Messages.USER_UPDATED,HttpStatus.OK, userEntityDTO);
     }
 
 
     public ResponseEntity<ApiResponse<String>> changePassword(ChangePasswordRequest req) {
         log.info("[changePassword] Thay đổi mật khẩu cho user ID: {}", req.getId());
 
-        User user = userRepository.findUserById(req.getId());
-        if (user == null) {
+        UserEntity userEntity = userRepository.findUserById(req.getId());
+        if (userEntity == null) {
             log.warn("[changePassword] Không tìm thấy người dùng với ID: {}", req.getId());
-            return ResponseEntity.status(HttpStatus.NOT_FOUND.value()).body(
-                    new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Người dùng không tồn tại!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.USER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         PasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
-        if (passwordEncoder.matches(req.getOldPassowrd(), user.getPassword())) {
-            user.setPassword(passwordEncoder.encode(req.getNewPassowrd()));
-            userRepository.save(user);
-            log.info("[changePassword] Đổi mật khẩu thành công cho user ID: {}", user.getId());
-            return ResponseEntity.status(HttpStatus.OK).body(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Đổi mật khẩu thành công!", null)
-            );
+        if (passwordEncoder.matches(req.getOldPassowrd(), userEntity.getPassword())) {
+            userEntity.setPassword(passwordEncoder.encode(req.getNewPassowrd()));
+            userRepository.save(userEntity);
+            log.info("[changePassword] Đổi mật khẩu thành công cho user ID: {}", userEntity.getId());
+            return ResponseHandler.generateResponse(Messages.PASSWORD_CHANGED_SUCCESS,HttpStatus.OK, null);
         } else {
-            log.warn("[changePassword] Sai mật khẩu cũ cho user ID: {}", user.getId());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                    new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "Sai mật khẩu cũ!", null)
-            );
+            log.warn("[changePassword] Sai mật khẩu cũ cho user ID: {}", userEntity.getId());
+            return ResponseHandler.generateResponse(Messages.OLD_PASSWORD_INCORRECT,HttpStatus.BAD_REQUEST, null);
         }
     }
 
@@ -126,17 +118,13 @@ public class UserService {
         try {
             if (file.isEmpty()) {
                 log.warn("[uploadImage] File trống!");
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(
-                        new ApiResponse<>(HttpStatus.BAD_REQUEST.value(), "File không được để trống!", null)
-                );
+                return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
             }
 
-            User user = userRepository.findUserById(id);
-            if (user == null) {
+            UserEntity userEntity = userRepository.findUserById(id);
+            if (userEntity == null) {
                 log.warn("[uploadImage] Không tìm thấy người dùng ID: {}", id);
-                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(
-                        new ApiResponse<>(HttpStatus.NOT_FOUND.value(), "Không tìm thấy người dùng!", null)
-                );
+                return ResponseHandler.generateResponse(Messages.USER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
             }
 
             log.info("[uploadImage] File nhận được: {}", file.getOriginalFilename());
@@ -154,19 +142,15 @@ public class UserService {
             Files.copy(file.getInputStream(), path, StandardCopyOption.REPLACE_EXISTING);
             log.info("[uploadImage] Đã lưu file tại: {}", path.toAbsolutePath());
 
-            user.setAvatarUrl(fileName);
-            userRepository.save(user);
+            userEntity.setAvatarUrl(fileName);
+            userRepository.save(userEntity);
             log.info("[uploadImage] Cập nhật "+mode+" thành công cho user ID: {}", id);
 
-            return ResponseEntity.status(HttpStatus.OK).body(
-                    new ApiResponse<>(HttpStatus.OK.value(), "Tải lên "+mode+" thành công!", fileName)
-            );
+            return ResponseHandler.generateResponse(Messages.IMAGE_UPLOAD_SUCCESS,HttpStatus.CREATED, fileName);
 
         } catch (IOException e) {
             log.error("[uploadImage] Lỗi khi upload file: {}", e.getMessage(), e);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(
-                    new ApiResponse<>(HttpStatus.INTERNAL_SERVER_ERROR.value(), "Thất bại trong quá trình tải file!", null)
-            );
+            return ResponseHandler.generateResponse(Messages.SYSTEM_ERROR,HttpStatus.INTERNAL_SERVER_ERROR, null);
         }
     }
 }

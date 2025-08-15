@@ -1,8 +1,8 @@
 package com.example.shop.service;
 
-import com.example.shop.model.ApiResponse;
-import com.example.shop.model.Review;
-import com.example.shop.model.ReviewLike;
+import com.example.shop.model.*;
+import com.example.shop.model.review.Review;
+import com.example.shop.model.review.ReviewLike;
 import com.example.shop.repository.ReviewLikeRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -30,23 +30,20 @@ public class ReviewLikeService {
 
     public ResponseEntity<ApiResponse<Boolean>> toggleLike(Long userId, Long reviewId) {
         if(userId == null || reviewId == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(400, "Thiếu thông tin yêu cầu", null));
+            return ResponseHandler.generateResponse(Messages.MISSING_REQUIRED_INFO,HttpStatus.BAD_REQUEST, null);
         }
 
         var user = userService.findUserById(userId);
         if(user == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(400, "Không tìm thấy người dùng", null));
+            return ResponseHandler.generateResponse(Messages.USER_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
         var review = reviewService.findReviewByID(reviewId);
         if(review == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(new ApiResponse<>(400, "Không tìm thấy đánh giá", null));
+            return ResponseHandler.generateResponse(Messages.REVIEW_NOT_FOUND,HttpStatus.NOT_FOUND, null);
         }
 
-        Optional<ReviewLike> existingLike = reviewLikeRepository.findReviewLikeByUserIdAndReviewId(userId, reviewId);
+        Optional<ReviewLike> existingLike = reviewLikeRepository.findReviewLikeByUserEntityIdAndReviewId(userId, reviewId);
 
         boolean liked;
         String message;
@@ -67,7 +64,8 @@ public class ReviewLikeService {
         updateLikeCount(reviewId);
         logger.info("User {} {} review {}", userId, liked ? "liked" : "unliked", reviewId);
 
-        return ResponseEntity.ok(new ApiResponse<>(200, message, liked));
+        return ResponseHandler.generateResponse(message,HttpStatus.OK, liked);
+
     }
 
 
@@ -78,7 +76,7 @@ public class ReviewLikeService {
     }
 
     public boolean isLiked(Long userId, Long reviewId) {
-        boolean liked = reviewLikeRepository.existsReviewLikeByUserIdAndReviewId(userId, reviewId);
+        boolean liked = reviewLikeRepository.existsReviewLikeByUserEntityIdAndReviewId(userId, reviewId);
         logger.debug("Người dùng {} {} đánh giá {}", userId, liked ? "đã like" : "chưa like", reviewId);
         return liked;
     }
@@ -88,7 +86,7 @@ public class ReviewLikeService {
 
         if (reviewId == null) {
             logger.warn("reviewId null khi cập nhật like count");
-            return;
+            return ;
         }
 
         Review review = reviewService.findReviewByID(reviewId);

@@ -1,14 +1,14 @@
 package com.example.shop.controller;
 
-import com.example.shop.dto.UserDTO;
-import com.example.shop.dto.request.LoginRequest;
-import com.example.shop.dto.request.RefreshTokenRequest;
+import com.example.shop.model.auth.login.LoginResponse;
+import com.example.shop.model.auth.register.RegisterRequest;
+import com.example.shop.model.auth.login.LoginRequest;
+import com.example.shop.model.auth.RefreshTokenRequest;
 import com.example.shop.model.ApiResponse;
-import com.example.shop.model.User;
+import com.example.shop.model.user.UserResponse;
 import com.example.shop.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,13 +24,13 @@ public class AuthController {
     private AuthService authService;
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<UserDTO>> login(@RequestBody LoginRequest loginRequest) {
+    public ResponseEntity<ApiResponse<UserResponse>> login(@RequestBody LoginRequest loginRequest) {
         return authService.login(loginRequest);
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<UserDTO>> createUser(@RequestBody User user) {
-        return authService.register(user);
+    public ResponseEntity<ApiResponse<String>> createUser(@RequestBody RegisterRequest registerRequest) {
+        return authService.register(registerRequest);
     }
 
     @PostMapping("/refreshToken")
